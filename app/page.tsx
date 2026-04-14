@@ -4,22 +4,35 @@ import CheckInForm from "./components/CheckInForm";
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const companyName = process.env.COMPANY_NAME || "Welcome";
+  let companyName = process.env.COMPANY_NAME || "Welcome";
+  let welcomeMessage = "Visitor Check-In";
+  let logoUrl = "";
 
   let workers: { id: number; name: string }[] = [];
   try {
     const result = await sql`SELECT id, name FROM workers ORDER BY name`;
     workers = result.rows as { id: number; name: string }[];
+
+    // Load settings
+    const settings = await sql`SELECT key, value FROM settings`;
+    for (const row of settings.rows) {
+      if (row.key === "company_name" && row.value) companyName = row.value;
+      if (row.key === "welcome_message" && row.value) welcomeMessage = row.value;
+      if (row.key === "logo_url" && row.value) logoUrl = row.value;
+    }
   } catch {
-    // Tables may not exist yet — form will show message
+    // Tables may not exist yet
   }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="w-full max-w-lg">
         <div className="text-center mb-8">
+          {logoUrl && (
+            <img src={logoUrl} alt={companyName} className="h-16 mx-auto mb-4 object-contain" />
+          )}
           <h1 className="text-3xl font-bold text-slate-800">{companyName}</h1>
-          <p className="text-slate-500 mt-1">Visitor Check-In</p>
+          <p className="text-slate-500 mt-1">{welcomeMessage}</p>
         </div>
 
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">

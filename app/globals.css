@@ -5,3 +5,12 @@
 body {
   font-family: system-ui, -apple-system, sans-serif;
 }
+
+@media print {
+  body {
+    background: white !important;
+  }
+  .print\:hidden {
+    display: none !important;
+  }
+}

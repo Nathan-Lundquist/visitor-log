@@ -34,7 +34,8 @@ export default function CheckInForm({ workers }: { workers: Worker[] }) {
     });
 
     if (res.ok) {
-      router.push("/checked-in");
+      const { id } = await res.json();
+      router.push(`/badge/${id}`);
     } else {
       setError("Something went wrong. Please try again.");
       setSubmitting(false);
