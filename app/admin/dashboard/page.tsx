@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 interface Visitor {
   id: number;
@@ -18,47 +19,58 @@ interface Worker {
   email: string | null;
 }
 
+interface SessionUser {
+  name: string;
+  email: string;
+  companyId: number;
+  companyName: string;
+  companySlug: string;
+}
+
 export default function Dashboard() {
+  const router = useRouter();
+  const [user, setUser] = useState<SessionUser | null>(null);
+  const [loading, setLoading] = useState(true);
   const [visitors, setVisitors] = useState<Visitor[]>([]);
   const [workers, setWorkers] = useState<Worker[]>([]);
   const [newWorkerName, setNewWorkerName] = useState("");
   const [newWorkerEmail, setNewWorkerEmail] = useState("");
   const [editingWorker, setEditingWorker] = useState<Worker | null>(null);
-  const [tab, setTab] = useState<"log" | "workers" | "settings">("log");
+  const [tab, setTab] = useState<"log" | "workers">("log");
   const [dateFilter, setDateFilter] = useState(() => new Date().toISOString().split("T")[0]);
-  const [settings, setSettings] = useState({ company_name: "", welcome_message: "", logo_url: "" });
-  const [settingsSaved, setSettingsSaved] = useState(false);
 
   useEffect(() => {
-    loadVisitors();
-    loadWorkers();
-    loadSettings();
-  }, []);
+    fetch("/api/auth/session")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data?.user?.companyId) {
+          setUser(data.user);
+          setLoading(false);
+        } else {
+          router.push("/admin");
+        }
+      })
+      .catch(() => router.push("/admin"));
+  }, [router]);
 
   useEffect(() => {
-    loadVisitors();
-  }, [dateFilter]);
+    if (user) loadVisitors();
+  }, [user, dateFilter]);
+
+  useEffect(() => {
+    if (user) loadWorkers();
+  }, [user]);
 
   async function loadVisitors() {
-    const res = await fetch(`/api/visitors?date=${dateFilter}`);
+    if (!user) return;
+    const res = await fetch(`/api/visitors?companyId=${user.companyId}&date=${dateFilter}`);
     if (res.ok) setVisitors(await res.json());
   }
 
   async function loadWorkers() {
-    const res = await fetch("/api/workers");
+    if (!user) return;
+    const res = await fetch(`/api/workers?companyId=${user.companyId}`);
     if (res.ok) setWorkers(await res.json());
-  }
-
-  async function loadSettings() {
-    const res = await fetch("/api/settings");
-    if (res.ok) {
-      const data = await res.json();
-      setSettings({
-        company_name: data.company_name || "",
-        welcome_message: data.welcome_message || "",
-        logo_url: data.logo_url || "",
-      });
-    }
   }
 
   async function addWorker(e: React.FormEvent) {
@@ -92,17 +104,6 @@ export default function Dashboard() {
     loadWorkers();
   }
 
-  async function saveSettings(e: React.FormEvent) {
-    e.preventDefault();
-    await fetch("/api/settings", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(settings),
-    });
-    setSettingsSaved(true);
-    setTimeout(() => setSettingsSaved(false), 2000);
-  }
-
   function exportCSV() {
     const header = "First Name,Last Name,Phone,Visiting,Reason,Time";
     const rows = visitors.map(
@@ -119,30 +120,34 @@ export default function Dashboard() {
     URL.revokeObjectURL(url);
   }
 
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center"><p className="text-slate-400">Loading...</p></div>;
+  }
+
   const tabClass = (t: string) =>
     `px-4 py-2 rounded-lg font-medium text-sm transition ${
       tab === t ? "bg-slate-800 text-white" : "bg-white text-slate-600 border border-slate-200"
     }`;
 
-  const inputClass = "w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition";
-
   return (
     <div className="min-h-screen bg-slate-50">
       <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
-        <h1 className="text-xl font-bold text-slate-800">Visitor Log</h1>
-        <a href="/admin" className="text-sm text-slate-500 hover:text-slate-700">
-          Logout
-        </a>
+        <div>
+          <h1 className="text-xl font-bold text-slate-800">{user?.companyName}</h1>
+          <p className="text-xs text-slate-400">Check-in page: /c/{user?.companySlug}</p>
+        </div>
+        <div className="flex items-center gap-4">
+          <span className="text-sm text-slate-500">{user?.email}</span>
+          <a href="/api/auth/signout" className="text-sm text-slate-500 hover:text-slate-700">Sign Out</a>
+        </div>
       </header>
 
       <div className="max-w-5xl mx-auto p-6">
         <div className="flex gap-2 mb-6">
           <button onClick={() => setTab("log")} className={tabClass("log")}>Visitor Log</button>
           <button onClick={() => setTab("workers")} className={tabClass("workers")}>Workers</button>
-          <button onClick={() => setTab("settings")} className={tabClass("settings")}>Settings</button>
         </div>
 
-        {/* Visitor Log Tab */}
         {tab === "log" && (
           <div className="bg-white rounded-xl border border-slate-200">
             <div className="p-4 border-b border-slate-200 flex items-center justify-between">
@@ -181,26 +186,15 @@ export default function Dashboard() {
                   <tbody>
                     {visitors.map((v) => (
                       <tr key={v.id} className="border-b border-slate-50 hover:bg-slate-50">
-                        <td className="px-4 py-3 font-medium">
-                          {v.first_name} {v.last_name}
-                        </td>
+                        <td className="px-4 py-3 font-medium">{v.first_name} {v.last_name}</td>
                         <td className="px-4 py-3 text-slate-600">{v.phone}</td>
                         <td className="px-4 py-3 text-slate-600">{v.worker_name}</td>
                         <td className="px-4 py-3 text-slate-600">{v.reason}</td>
                         <td className="px-4 py-3 text-slate-500">
-                          {new Date(v.checked_in_at).toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
+                          {new Date(v.checked_in_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                         </td>
                         <td className="px-4 py-3">
-                          <a
-                            href={`/badge/${v.id}`}
-                            target="_blank"
-                            className="text-blue-600 hover:text-blue-800 text-xs"
-                          >
-                            Badge
-                          </a>
+                          <a href={`/badge/${v.id}`} target="_blank" className="text-blue-600 hover:text-blue-800 text-xs">Badge</a>
                         </td>
                       </tr>
                     ))}
@@ -211,7 +205,6 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Workers Tab */}
         {tab === "workers" && (
           <div className="bg-white rounded-xl border border-slate-200">
             <form onSubmit={addWorker} className="p-4 border-b border-slate-200">
@@ -243,10 +236,7 @@ export default function Dashboard() {
             ) : (
               <ul>
                 {workers.map((w) => (
-                  <li
-                    key={w.id}
-                    className="px-4 py-3 border-b border-slate-50 last:border-0"
-                  >
+                  <li key={w.id} className="px-4 py-3 border-b border-slate-50 last:border-0">
                     {editingWorker?.id === w.id ? (
                       <form onSubmit={updateWorker} className="flex gap-3 items-center">
                         <input
@@ -271,18 +261,8 @@ export default function Dashboard() {
                           {w.email && <span className="ml-3 text-sm text-slate-400">{w.email}</span>}
                         </div>
                         <div className="flex gap-3">
-                          <button
-                            onClick={() => setEditingWorker(w)}
-                            className="text-sm text-blue-500 hover:text-blue-700"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => removeWorker(w.id)}
-                            className="text-sm text-red-500 hover:text-red-700"
-                          >
-                            Remove
-                          </button>
+                          <button onClick={() => setEditingWorker(w)} className="text-sm text-blue-500 hover:text-blue-700">Edit</button>
+                          <button onClick={() => removeWorker(w.id)} className="text-sm text-red-500 hover:text-red-700">Remove</button>
                         </div>
                       </div>
                     )}
@@ -290,56 +270,6 @@ export default function Dashboard() {
                 ))}
               </ul>
             )}
-          </div>
-        )}
-
-        {/* Settings Tab */}
-        {tab === "settings" && (
-          <div className="bg-white rounded-xl border border-slate-200 p-6">
-            <form onSubmit={saveSettings} className="space-y-5 max-w-lg">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Company Name</label>
-                <input
-                  value={settings.company_name}
-                  onChange={(e) => setSettings({ ...settings, company_name: e.target.value })}
-                  placeholder="Your Company"
-                  className={inputClass}
-                />
-                <p className="text-xs text-slate-400 mt-1">Shown at the top of the check-in page and on badges.</p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Welcome Message</label>
-                <input
-                  value={settings.welcome_message}
-                  onChange={(e) => setSettings({ ...settings, welcome_message: e.target.value })}
-                  placeholder="Visitor Check-In"
-                  className={inputClass}
-                />
-                <p className="text-xs text-slate-400 mt-1">Subtitle below the company name.</p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Logo URL</label>
-                <input
-                  value={settings.logo_url}
-                  onChange={(e) => setSettings({ ...settings, logo_url: e.target.value })}
-                  placeholder="https://example.com/logo.png"
-                  className={inputClass}
-                />
-                <p className="text-xs text-slate-400 mt-1">Direct link to your company logo image.</p>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <button
-                  type="submit"
-                  className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition"
-                >
-                  Save Settings
-                </button>
-                {settingsSaved && <span className="text-sm text-green-600">Saved!</span>}
-              </div>
-            </form>
           </div>
         )}
       </div>
