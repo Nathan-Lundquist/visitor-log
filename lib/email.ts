@@ -9,10 +9,11 @@ interface VisitorNotification {
   phone: string;
   reason: string;
   time: string;
+  companyName: string;
 }
 
 export async function notifyWorker(data: VisitorNotification) {
-  if (!resend) return; // Email not configured — skip silently
+  if (!resend) return;
 
   const fromAddress = process.env.EMAIL_FROM || "Visitor Log <noreply@resend.dev>";
 
@@ -22,7 +23,7 @@ export async function notifyWorker(data: VisitorNotification) {
     subject: `Visitor Arrival: ${data.visitorName}`,
     html: `
       <div style="font-family: system-ui, sans-serif; max-width: 480px;">
-        <h2 style="margin-bottom: 4px;">Visitor Arrival</h2>
+        <h2 style="margin-bottom: 4px;">Visitor Arrival — ${data.companyName}</h2>
         <p>Hi ${data.workerName},</p>
         <p><strong>${data.visitorName}</strong> has arrived to see you.</p>
         <table style="border-collapse: collapse; margin: 16px 0;">
