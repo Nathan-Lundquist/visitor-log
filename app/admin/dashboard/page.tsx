@@ -40,7 +40,7 @@ export default function Dashboard() {
   const [dateFilter, setDateFilter] = useState(() => new Date().toISOString().split("T")[0]);
 
   useEffect(() => {
-    fetch("/api/auth/session")
+    fetch("/api/admin/session")
       .then((r) => r.json())
       .then((data) => {
         if (data?.user?.companyId) {
@@ -138,7 +138,7 @@ export default function Dashboard() {
         </div>
         <div className="flex items-center gap-4">
           <span className="text-sm text-slate-500">{user?.email}</span>
-          <a href="/api/auth/signout" className="text-sm text-slate-500 hover:text-slate-700">Sign Out</a>
+          <a href="/admin" onClick={() => document.cookie = "admin_session=; path=/; max-age=0"} className="text-sm text-slate-500 hover:text-slate-700">Sign Out</a>
         </div>
       </header>
 

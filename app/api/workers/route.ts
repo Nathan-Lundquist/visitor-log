@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@vercel/postgres";
-import { auth } from "@/auth";
+import { getAdminSession } from "@/auth";
 
 export async function GET(req: NextRequest) {
   const companyId = req.nextUrl.searchParams.get("companyId");
@@ -12,8 +12,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.companyId) {
+  const session = await getAdminSession();
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -21,13 +21,13 @@ export async function POST(req: NextRequest) {
   if (!name?.trim()) {
     return NextResponse.json({ error: "Name required" }, { status: 400 });
   }
-  await sql`INSERT INTO workers (name, email, company_id) VALUES (${name.trim()}, ${email?.trim() || null}, ${session.user.companyId})`;
+  await sql`INSERT INTO workers (name, email, company_id) VALUES (${name.trim()}, ${email?.trim() || null}, ${session.companyId})`;
   return NextResponse.json({ ok: true });
 }
 
 export async function PUT(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.companyId) {
+  const session = await getAdminSession();
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -35,18 +35,18 @@ export async function PUT(req: NextRequest) {
   if (!id || !name?.trim()) {
     return NextResponse.json({ error: "ID and name required" }, { status: 400 });
   }
-  await sql`UPDATE workers SET name = ${name.trim()}, email = ${email?.trim() || null} WHERE id = ${id} AND company_id = ${session.user.companyId}`;
+  await sql`UPDATE workers SET name = ${name.trim()}, email = ${email?.trim() || null} WHERE id = ${id} AND company_id = ${session.companyId}`;
   return NextResponse.json({ ok: true });
 }
 
 export async function DELETE(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.companyId) {
+  const session = await getAdminSession();
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const id = req.nextUrl.searchParams.get("id");
   if (!id) return NextResponse.json({ error: "ID required" }, { status: 400 });
-  await sql`DELETE FROM workers WHERE id = ${Number(id)} AND company_id = ${session.user.companyId}`;
+  await sql`DELETE FROM workers WHERE id = ${Number(id)} AND company_id = ${session.companyId}`;
   return NextResponse.json({ ok: true });
 }
