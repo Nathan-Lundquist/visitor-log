@@ -13,7 +13,7 @@ export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
 
   // Protect super admin dashboard and API
-  if (path.startsWith("/super-admin/dashboard") || path.startsWith("/api/super-admin/companies")) {
+  if (path.startsWith("/super-admin/dashboard") || path.startsWith("/api/super-admin/companies") || path.startsWith("/api/super-admin/admins")) {
     const token = request.cookies.get("super_admin_token")?.value;
     const password = process.env.SUPER_ADMIN_PASSWORD || "changeme";
     const expected = await sha256(`visitor-log-super:${password}`);
@@ -30,5 +30,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/super-admin/dashboard/:path*", "/api/super-admin/companies/:path*"],
+  matcher: ["/super-admin/dashboard/:path*", "/api/super-admin/companies/:path*", "/api/super-admin/admins/:path*"],
 };

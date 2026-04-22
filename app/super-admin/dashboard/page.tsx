@@ -12,17 +12,34 @@ interface Company {
   created_at: string;
 }
 
+interface Admin {
+  id: number;
+  email: string;
+  company_id: number;
+  company_name: string;
+  created_at: string;
+}
+
 export default function SuperAdminDashboard() {
+  const [tab, setTab] = useState<"companies" | "admins">("companies");
   const [companies, setCompanies] = useState<Company[]>([]);
+  const [admins, setAdmins] = useState<Admin[]>([]);
   const [editing, setEditing] = useState<Company | null>(null);
   const [form, setForm] = useState({ name: "", slug: "", domain: "", logo_url: "", welcome_message: "" });
+  const [adminForm, setAdminForm] = useState({ email: "", password: "", company_id: "" });
   const [error, setError] = useState("");
+  const [adminError, setAdminError] = useState("");
 
-  useEffect(() => { loadCompanies(); }, []);
+  useEffect(() => { loadCompanies(); loadAdmins(); }, []);
 
   async function loadCompanies() {
     const res = await fetch("/api/super-admin/companies");
     if (res.ok) setCompanies(await res.json());
+  }
+
+  async function loadAdmins() {
+    const res = await fetch("/api/super-admin/admins");
+    if (res.ok) setAdmins(await res.json());
   }
 
   function autoSlug(name: string) {
@@ -56,6 +73,7 @@ export default function SuperAdminDashboard() {
     if (!confirm("Delete this company and all its data? This cannot be undone.")) return;
     await fetch(`/api/super-admin/companies?id=${id}`, { method: "DELETE" });
     loadCompanies();
+    loadAdmins();
   }
 
   function startEdit(c: Company) {
@@ -69,7 +87,45 @@ export default function SuperAdminDashboard() {
     });
   }
 
+  async function addAdmin(e: React.FormEvent) {
+    e.preventDefault();
+    setAdminError("");
+
+    if (!adminForm.email.trim() || !adminForm.password || !adminForm.company_id) {
+      setAdminError("All fields required");
+      return;
+    }
+
+    const res = await fetch("/api/super-admin/admins", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: adminForm.email,
+        password: adminForm.password,
+        company_id: Number(adminForm.company_id),
+      }),
+    });
+
+    if (res.ok) {
+      setAdminForm({ email: "", password: "", company_id: "" });
+      loadAdmins();
+    } else {
+      const data = await res.json();
+      setAdminError(data.error || "Failed to create admin");
+    }
+  }
+
+  async function deleteAdmin(id: number) {
+    if (!confirm("Remove this admin?")) return;
+    await fetch(`/api/super-admin/admins?id=${id}`, { method: "DELETE" });
+    loadAdmins();
+  }
+
   const inputClass = "w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition";
+  const tabClass = (t: string) =>
+    `px-4 py-2 rounded-lg font-medium text-sm transition ${
+      tab === t ? "bg-slate-800 text-white" : "bg-white text-slate-600 border border-slate-200"
+    }`;
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -79,137 +135,234 @@ export default function SuperAdminDashboard() {
       </header>
 
       <div className="max-w-4xl mx-auto p-6">
-        {/* Add / Edit Form */}
-        <div className="bg-white rounded-xl border border-slate-200 p-6 mb-6">
-          <h2 className="text-lg font-semibold text-slate-800 mb-4">
-            {editing ? "Edit Company" : "Add Company"}
-          </h2>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Company Name</label>
-                <input
-                  value={form.name}
-                  onChange={(e) => {
-                    const name = e.target.value;
-                    setForm((f) => ({ ...f, name, slug: editing ? f.slug : autoSlug(name) }));
-                  }}
-                  placeholder="Acme Corp"
-                  required
-                  className={inputClass}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">URL Slug</label>
-                <div className="flex items-center">
-                  <span className="text-sm text-slate-400 mr-1">/c/</span>
+        <div className="flex gap-2 mb-6">
+          <button onClick={() => setTab("companies")} className={tabClass("companies")}>Companies</button>
+          <button onClick={() => setTab("admins")} className={tabClass("admins")}>Admin Users</button>
+        </div>
+
+        {tab === "companies" && (
+          <>
+            {/* Add / Edit Form */}
+            <div className="bg-white rounded-xl border border-slate-200 p-6 mb-6">
+              <h2 className="text-lg font-semibold text-slate-800 mb-4">
+                {editing ? "Edit Company" : "Add Company"}
+              </h2>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Company Name</label>
+                    <input
+                      value={form.name}
+                      onChange={(e) => {
+                        const name = e.target.value;
+                        setForm((f) => ({ ...f, name, slug: editing ? f.slug : autoSlug(name) }));
+                      }}
+                      placeholder="Acme Corp"
+                      required
+                      className={inputClass}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">URL Slug</label>
+                    <div className="flex items-center">
+                      <span className="text-sm text-slate-400 mr-1">/c/</span>
+                      <input
+                        value={form.slug}
+                        onChange={(e) => setForm({ ...form, slug: e.target.value })}
+                        placeholder="acme"
+                        required
+                        className={inputClass}
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Email Domain</label>
+                    <input
+                      value={form.domain}
+                      onChange={(e) => setForm({ ...form, domain: e.target.value })}
+                      placeholder="acme.com"
+                      required
+                      className={inputClass}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Logo URL</label>
+                    <input
+                      value={form.logo_url}
+                      onChange={(e) => setForm({ ...form, logo_url: e.target.value })}
+                      placeholder="https://example.com/logo.png"
+                      className={inputClass}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Welcome Message</label>
                   <input
-                    value={form.slug}
-                    onChange={(e) => setForm({ ...form, slug: e.target.value })}
-                    placeholder="acme"
-                    required
+                    value={form.welcome_message}
+                    onChange={(e) => setForm({ ...form, welcome_message: e.target.value })}
+                    placeholder="Welcome to Acme Corp"
                     className={inputClass}
                   />
                 </div>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Email Domain</label>
-                <input
-                  value={form.domain}
-                  onChange={(e) => setForm({ ...form, domain: e.target.value })}
-                  placeholder="acme.com"
-                  required
-                  className={inputClass}
-                />
-                <p className="text-xs text-slate-400 mt-1">Users with @acme.com emails can sign in as admins</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Logo URL</label>
-                <input
-                  value={form.logo_url}
-                  onChange={(e) => setForm({ ...form, logo_url: e.target.value })}
-                  placeholder="https://example.com/logo.png"
-                  className={inputClass}
-                />
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Welcome Message</label>
-              <input
-                value={form.welcome_message}
-                onChange={(e) => setForm({ ...form, welcome_message: e.target.value })}
-                placeholder="Welcome to Acme Corp"
-                className={inputClass}
-              />
+
+                {error && <p className="text-red-600 text-sm">{error}</p>}
+
+                <div className="flex gap-3">
+                  <button type="submit" className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition">
+                    {editing ? "Save Changes" : "Add Company"}
+                  </button>
+                  {editing && (
+                    <button
+                      type="button"
+                      onClick={() => { setEditing(null); setForm({ name: "", slug: "", domain: "", logo_url: "", welcome_message: "" }); }}
+                      className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium rounded-lg transition"
+                    >
+                      Cancel
+                    </button>
+                  )}
+                </div>
+              </form>
             </div>
 
-            {error && <p className="text-red-600 text-sm">{error}</p>}
-
-            <div className="flex gap-3">
-              <button
-                type="submit"
-                className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition"
-              >
-                {editing ? "Save Changes" : "Add Company"}
-              </button>
-              {editing && (
-                <button
-                  type="button"
-                  onClick={() => { setEditing(null); setForm({ name: "", slug: "", domain: "", logo_url: "", welcome_message: "" }); }}
-                  className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium rounded-lg transition"
-                >
-                  Cancel
-                </button>
+            {/* Companies List */}
+            <div className="bg-white rounded-xl border border-slate-200">
+              <div className="p-4 border-b border-slate-200">
+                <h2 className="text-lg font-semibold text-slate-800">{companies.length} Companies</h2>
+              </div>
+              {companies.length === 0 ? (
+                <p className="p-8 text-center text-slate-400">No companies yet. Add one above.</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-slate-100">
+                        <th className="text-left px-4 py-3 font-medium text-slate-500">Company</th>
+                        <th className="text-left px-4 py-3 font-medium text-slate-500">Slug</th>
+                        <th className="text-left px-4 py-3 font-medium text-slate-500">Domain</th>
+                        <th className="text-left px-4 py-3 font-medium text-slate-500">Admins</th>
+                        <th className="text-left px-4 py-3 font-medium text-slate-500"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {companies.map((c) => (
+                        <tr key={c.id} className="border-b border-slate-50 hover:bg-slate-50">
+                          <td className="px-4 py-3 font-medium">{c.name}</td>
+                          <td className="px-4 py-3 text-slate-600">
+                            <a href={`/c/${c.slug}`} className="text-blue-600 hover:underline">/c/{c.slug}</a>
+                          </td>
+                          <td className="px-4 py-3 text-slate-600">{c.domain}</td>
+                          <td className="px-4 py-3 text-slate-500">
+                            {admins.filter((a) => a.company_id === c.id).length}
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex gap-3">
+                              <button onClick={() => startEdit(c)} className="text-sm text-blue-500 hover:text-blue-700">Edit</button>
+                              <button onClick={() => deleteCompany(c.id)} className="text-sm text-red-500 hover:text-red-700">Delete</button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </div>
-          </form>
-        </div>
+          </>
+        )}
 
-        {/* Companies List */}
-        <div className="bg-white rounded-xl border border-slate-200">
-          <div className="p-4 border-b border-slate-200">
-            <h2 className="text-lg font-semibold text-slate-800">{companies.length} Companies</h2>
-          </div>
-          {companies.length === 0 ? (
-            <p className="p-8 text-center text-slate-400">No companies yet. Add one above.</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-slate-100">
-                    <th className="text-left px-4 py-3 font-medium text-slate-500">Company</th>
-                    <th className="text-left px-4 py-3 font-medium text-slate-500">Slug</th>
-                    <th className="text-left px-4 py-3 font-medium text-slate-500">Domain</th>
-                    <th className="text-left px-4 py-3 font-medium text-slate-500">Created</th>
-                    <th className="text-left px-4 py-3 font-medium text-slate-500"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {companies.map((c) => (
-                    <tr key={c.id} className="border-b border-slate-50 hover:bg-slate-50">
-                      <td className="px-4 py-3 font-medium">{c.name}</td>
-                      <td className="px-4 py-3 text-slate-600">
-                        <a href={`/c/${c.slug}`} className="text-blue-600 hover:underline">/c/{c.slug}</a>
-                      </td>
-                      <td className="px-4 py-3 text-slate-600">{c.domain}</td>
-                      <td className="px-4 py-3 text-slate-500">
-                        {new Date(c.created_at).toLocaleDateString()}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex gap-3">
-                          <button onClick={() => startEdit(c)} className="text-sm text-blue-500 hover:text-blue-700">Edit</button>
-                          <button onClick={() => deleteCompany(c.id)} className="text-sm text-red-500 hover:text-red-700">Delete</button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+        {tab === "admins" && (
+          <>
+            {/* Add Admin Form */}
+            <div className="bg-white rounded-xl border border-slate-200 p-6 mb-6">
+              <h2 className="text-lg font-semibold text-slate-800 mb-4">Add Admin User</h2>
+              <form onSubmit={addAdmin} className="space-y-4">
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
+                    <input
+                      type="email"
+                      value={adminForm.email}
+                      onChange={(e) => setAdminForm({ ...adminForm, email: e.target.value })}
+                      placeholder="user@company.com"
+                      required
+                      className={inputClass}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
+                    <input
+                      type="text"
+                      value={adminForm.password}
+                      onChange={(e) => setAdminForm({ ...adminForm, password: e.target.value })}
+                      placeholder="Set a password"
+                      required
+                      className={inputClass}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Company</label>
+                    <select
+                      value={adminForm.company_id}
+                      onChange={(e) => setAdminForm({ ...adminForm, company_id: e.target.value })}
+                      required
+                      className={inputClass}
+                    >
+                      <option value="">Select company</option>
+                      {companies.map((c) => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {adminError && <p className="text-red-600 text-sm">{adminError}</p>}
+
+                <button type="submit" className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition">
+                  Add Admin
+                </button>
+              </form>
             </div>
-          )}
-        </div>
+
+            {/* Admins List */}
+            <div className="bg-white rounded-xl border border-slate-200">
+              <div className="p-4 border-b border-slate-200">
+                <h2 className="text-lg font-semibold text-slate-800">{admins.length} Admin Users</h2>
+              </div>
+              {admins.length === 0 ? (
+                <p className="p-8 text-center text-slate-400">No admin users yet. Add one above.</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-slate-100">
+                        <th className="text-left px-4 py-3 font-medium text-slate-500">Email</th>
+                        <th className="text-left px-4 py-3 font-medium text-slate-500">Company</th>
+                        <th className="text-left px-4 py-3 font-medium text-slate-500">Created</th>
+                        <th className="text-left px-4 py-3 font-medium text-slate-500"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {admins.map((a) => (
+                        <tr key={a.id} className="border-b border-slate-50 hover:bg-slate-50">
+                          <td className="px-4 py-3 font-medium">{a.email}</td>
+                          <td className="px-4 py-3 text-slate-600">{a.company_name}</td>
+                          <td className="px-4 py-3 text-slate-500">
+                            {new Date(a.created_at).toLocaleDateString()}
+                          </td>
+                          <td className="px-4 py-3">
+                            <button onClick={() => deleteAdmin(a.id)} className="text-sm text-red-500 hover:text-red-700">Remove</button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 export default function AdminLogin() {
   const router = useRouter();
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -17,7 +18,7 @@ export default function AdminLogin() {
     const res = await fetch("/api/admin/auth", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email }),
+      body: JSON.stringify({ email, password }),
     });
 
     if (res.ok) {
@@ -32,14 +33,22 @@ export default function AdminLogin() {
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="w-full max-w-sm">
-        <h1 className="text-2xl font-bold text-slate-800 text-center mb-2">Company Admin</h1>
-        <p className="text-sm text-slate-500 text-center mb-6">Sign in with your company email</p>
+        <h1 className="text-2xl font-bold text-slate-800 text-center mb-2">Admin Login</h1>
+        <p className="text-sm text-slate-500 text-center mb-6">Sign in to manage your company</p>
         <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-4">
           <input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@company.com"
+            required
+            className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition"
+          />
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Password"
             required
             className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition"
           />
