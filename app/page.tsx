@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 export default function Home() {
   const router = useRouter();
   const [mode, setMode] = useState<null | "kiosk" | "admin">(null);
-  const [slug, setSlug] = useState("");
+  const [kioskEmail, setKioskEmail] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -14,8 +14,25 @@ export default function Home() {
 
   async function handleKiosk(e: React.FormEvent) {
     e.preventDefault();
-    if (!slug.trim()) return;
-    router.push(`/c/${slug.trim().toLowerCase()}`);
+    setError("");
+    setSubmitting(true);
+
+    const domain = kioskEmail.trim().toLowerCase().split("@")[1];
+    if (!domain) {
+      setError("Please enter a valid email");
+      setSubmitting(false);
+      return;
+    }
+
+    const res = await fetch(`/api/kiosk/lookup?domain=${encodeURIComponent(domain)}`);
+    if (res.ok) {
+      const { slug } = await res.json();
+      router.push(`/c/${slug}`);
+    } else {
+      const data = await res.json();
+      setError(data.error || "Company not found");
+      setSubmitting(false);
+    }
   }
 
   async function handleAdmin(e: React.FormEvent) {
@@ -72,20 +89,23 @@ export default function Home() {
         <div className="w-full max-w-sm">
           <button onClick={() => setMode(null)} className="text-sm text-slate-500 hover:text-slate-700 mb-6 block">&larr; Back</button>
           <h1 className="text-2xl font-bold text-slate-800 text-center mb-2">Check-In Kiosk</h1>
-          <p className="text-sm text-slate-500 text-center mb-6">Enter your company code</p>
+          <p className="text-sm text-slate-500 text-center mb-6">Enter your company email to start</p>
           <form onSubmit={handleKiosk} className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-4">
             <input
-              value={slug}
-              onChange={(e) => setSlug(e.target.value)}
-              placeholder="Company code (e.g. pcshards)"
+              type="email"
+              value={kioskEmail}
+              onChange={(e) => setKioskEmail(e.target.value)}
+              placeholder="you@company.com"
               required
               className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition"
             />
+            {error && mode === "kiosk" && <p className="text-red-600 text-sm">{error}</p>}
             <button
               type="submit"
-              className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition"
+              disabled={submitting}
+              className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold rounded-lg transition"
             >
-              Go to Check-In
+              {submitting ? "Looking up..." : "Go to Check-In"}
             </button>
           </form>
         </div>
