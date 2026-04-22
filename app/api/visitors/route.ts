@@ -2,7 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@vercel/postgres";
 
 export async function GET(req: NextRequest) {
+  const companyId = req.nextUrl.searchParams.get("companyId");
   const date = req.nextUrl.searchParams.get("date");
+
+  if (!companyId) {
+    return NextResponse.json({ error: "companyId required" }, { status: 400 });
+  }
 
   let result;
   if (date) {
@@ -11,7 +16,7 @@ export async function GET(req: NextRequest) {
              w.name AS worker_name
       FROM visitors v
       JOIN workers w ON w.id = v.worker_id
-      WHERE v.checked_in_at::date = ${date}::date
+      WHERE v.company_id = ${Number(companyId)} AND v.checked_in_at::date = ${date}::date
       ORDER BY v.checked_in_at DESC
     `;
   } else {
@@ -20,6 +25,7 @@ export async function GET(req: NextRequest) {
              w.name AS worker_name
       FROM visitors v
       JOIN workers w ON w.id = v.worker_id
+      WHERE v.company_id = ${Number(companyId)}
       ORDER BY v.checked_in_at DESC
       LIMIT 100
     `;
