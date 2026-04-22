@@ -10,18 +10,25 @@ async function sha256(message: string): Promise<string> {
 }
 
 export async function middleware(request: NextRequest) {
-  if (request.nextUrl.pathname.startsWith("/admin/dashboard")) {
-    const token = request.cookies.get("admin_token")?.value;
-    const password = process.env.ADMIN_PASSWORD || "changeme";
-    const expected = await sha256(`visitor-log:${password}`);
+  const path = request.nextUrl.pathname;
+
+  // Protect super admin dashboard and API
+  if (path.startsWith("/super-admin/dashboard") || path.startsWith("/api/super-admin/companies")) {
+    const token = request.cookies.get("super_admin_token")?.value;
+    const password = process.env.SUPER_ADMIN_PASSWORD || "changeme";
+    const expected = await sha256(`visitor-log-super:${password}`);
 
     if (token !== expected) {
-      return NextResponse.redirect(new URL("/admin", request.url));
+      if (path.startsWith("/api/")) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+      return NextResponse.redirect(new URL("/super-admin", request.url));
     }
   }
+
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/admin/dashboard/:path*"],
+  matcher: ["/super-admin/dashboard/:path*", "/api/super-admin/companies/:path*"],
 };
