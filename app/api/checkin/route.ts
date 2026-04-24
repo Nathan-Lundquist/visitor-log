@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
 
   // Notify all company admins
   const adminsResult = await sql`SELECT email FROM admins WHERE company_id = ${company_id}`;
-  const adminEmails = adminsResult.rows.map((r: { email: string }) => r.email);
+  const adminEmails = adminsResult.rows.map((r) => r.email as string);
 
   if (adminEmails.length > 0) {
     const companyResult2 = await sql`SELECT name FROM companies WHERE id = ${company_id}`;

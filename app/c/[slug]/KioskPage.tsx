@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 interface Worker {
   id: number;
   name: string;
+  title: string | null;
 }
 
 interface Visitor {
@@ -25,6 +26,9 @@ interface Company {
   slug: string;
   logo_url: string | null;
   welcome_message: string | null;
+  primary_color: string;
+  require_license: boolean;
+  require_agreement: boolean;
 }
 
 export default function KioskPage({ company, workers }: { company: Company; workers: Worker[] }) {
