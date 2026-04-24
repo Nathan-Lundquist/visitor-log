@@ -4,6 +4,7 @@ import { sql } from "@vercel/postgres";
 export async function GET(req: NextRequest) {
   const companyId = req.nextUrl.searchParams.get("companyId");
   const date = req.nextUrl.searchParams.get("date");
+  const range = req.nextUrl.searchParams.get("range"); // "week" or "month"
 
   if (!companyId) {
     return NextResponse.json({ error: "companyId required" }, { status: 400 });
@@ -12,19 +13,51 @@ export async function GET(req: NextRequest) {
   let result;
   if (date) {
     result = await sql`
-      SELECT v.id, v.first_name, v.last_name, v.phone, v.reason, v.checked_in_at,
-             w.name AS worker_name
+      SELECT v.id, v.first_name, v.last_name, v.phone, v.reason,
+             v.checked_in_at, v.checked_out_at,
+             w.name AS worker_name,
+             vl.photo_url AS license_photo_url
       FROM visitors v
-      JOIN workers w ON w.id = v.worker_id
+      LEFT JOIN workers w ON w.id = v.worker_id
+      LEFT JOIN visitor_licenses vl ON vl.visitor_id = v.id
       WHERE v.company_id = ${Number(companyId)} AND v.checked_in_at::date = ${date}::date
+      ORDER BY v.checked_in_at DESC
+    `;
+  } else if (range === "week") {
+    result = await sql`
+      SELECT v.id, v.first_name, v.last_name, v.phone, v.reason,
+             v.checked_in_at, v.checked_out_at,
+             w.name AS worker_name,
+             vl.photo_url AS license_photo_url
+      FROM visitors v
+      LEFT JOIN workers w ON w.id = v.worker_id
+      LEFT JOIN visitor_licenses vl ON vl.visitor_id = v.id
+      WHERE v.company_id = ${Number(companyId)}
+        AND v.checked_in_at >= NOW() - INTERVAL '7 days'
+      ORDER BY v.checked_in_at DESC
+    `;
+  } else if (range === "month") {
+    result = await sql`
+      SELECT v.id, v.first_name, v.last_name, v.phone, v.reason,
+             v.checked_in_at, v.checked_out_at,
+             w.name AS worker_name,
+             vl.photo_url AS license_photo_url
+      FROM visitors v
+      LEFT JOIN workers w ON w.id = v.worker_id
+      LEFT JOIN visitor_licenses vl ON vl.visitor_id = v.id
+      WHERE v.company_id = ${Number(companyId)}
+        AND v.checked_in_at >= NOW() - INTERVAL '30 days'
       ORDER BY v.checked_in_at DESC
     `;
   } else {
     result = await sql`
-      SELECT v.id, v.first_name, v.last_name, v.phone, v.reason, v.checked_in_at,
-             w.name AS worker_name
+      SELECT v.id, v.first_name, v.last_name, v.phone, v.reason,
+             v.checked_in_at, v.checked_out_at,
+             w.name AS worker_name,
+             vl.photo_url AS license_photo_url
       FROM visitors v
-      JOIN workers w ON w.id = v.worker_id
+      LEFT JOIN workers w ON w.id = v.worker_id
+      LEFT JOIN visitor_licenses vl ON vl.visitor_id = v.id
       WHERE v.company_id = ${Number(companyId)}
       ORDER BY v.checked_in_at DESC
       LIMIT 100
