@@ -1,6 +1,7 @@
 import { sql } from "@vercel/postgres";
 import { notFound } from "next/navigation";
 import KioskWizard from "./KioskWizard";
+import type { Agreement } from "./types";
 
 export const dynamic = "force-dynamic";
 
@@ -17,14 +18,14 @@ export default async function CompanyCheckIn({ params }: { params: Promise<{ slu
   const workersResult = await sql`SELECT id, name, title FROM workers WHERE company_id = ${company.id} ORDER BY name`;
 
   // Fetch active agreement if required
-  let agreement = null;
+  let agreement: Agreement | null = null;
   if (company.require_agreement) {
     const agResult = await sql`
       SELECT id, file_url, filename FROM agreements
       WHERE company_id = ${company.id} AND enabled = true
       ORDER BY created_at DESC LIMIT 1
     `;
-    agreement = agResult.rows[0] || null;
+    agreement = (agResult.rows[0] as Agreement) || null;
   }
 
   return (
