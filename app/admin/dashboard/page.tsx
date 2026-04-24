@@ -46,7 +46,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (user) {
-      fetch(`/api/admin/stats?companyId=${user.companyId}`)
+      fetch("/api/admin/stats")
         .then((r) => r.json())
         .then(setStats)
         .catch(() => {});

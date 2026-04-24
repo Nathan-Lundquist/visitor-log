@@ -23,11 +23,11 @@ export async function GET(req: NextRequest) {
 
 // POST: check out a visitor
 export async function POST(req: NextRequest) {
-  const { visitor_id } = await req.json();
-  if (!visitor_id) {
-    return NextResponse.json({ error: "visitor_id required" }, { status: 400 });
+  const { visitor_id, company_id } = await req.json();
+  if (!visitor_id || !company_id) {
+    return NextResponse.json({ error: "visitor_id and company_id required" }, { status: 400 });
   }
 
-  await sql`UPDATE visitors SET checked_out_at = NOW() WHERE id = ${visitor_id} AND checked_out_at IS NULL`;
+  await sql`UPDATE visitors SET checked_out_at = NOW() WHERE id = ${visitor_id} AND company_id = ${company_id} AND checked_out_at IS NULL`;
   return NextResponse.json({ ok: true });
 }

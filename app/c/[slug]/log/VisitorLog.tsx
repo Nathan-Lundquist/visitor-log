@@ -43,7 +43,7 @@ export default function VisitorLog({ company }: { company: CompanyInfo }) {
     await fetch("/api/kiosk/visitors", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ visitor_id: visitorId }),
+      body: JSON.stringify({ visitor_id: visitorId, company_id: company.id }),
     });
     loadVisitors();
   }
