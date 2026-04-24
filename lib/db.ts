@@ -47,6 +47,7 @@ export async function ensureTables() {
   // Migration: add company_id to existing tables if missing
   await sql`ALTER TABLE workers ADD COLUMN IF NOT EXISTS company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE`;
   await sql`ALTER TABLE visitors ADD COLUMN IF NOT EXISTS company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE`;
+  await sql`ALTER TABLE visitors ADD COLUMN IF NOT EXISTS checked_out_at TIMESTAMP`;
 }
 
 export { sql };

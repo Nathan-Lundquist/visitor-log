@@ -1,0 +1,2 @@
+{"type":"server-started","port":52976,"host":"0.0.0.0","url_host":"192.168.0.49","url":"http://192.168.0.49:52976","screen_dir":"/home/nathan/projects/visitor-log/.superpowers/brainstorm/2551514-1776950092/content","state_dir":"/home/nathan/projects/visitor-log/.superpowers/brainstorm/2551514-1776950092/state"}
+{"type":"server-stopped","reason":"idle timeout"}

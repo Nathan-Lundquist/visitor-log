@@ -31,7 +31,7 @@ export default function CheckInForm({
       first_name: form.get("first_name"),
       last_name: form.get("last_name"),
       phone: form.get("phone"),
-      worker_id: Number(form.get("worker_id")),
+      worker_id: form.get("worker_id") ? Number(form.get("worker_id")) || null : null,
       reason: form.get("reason"),
       company_id: companyId,
     };
@@ -74,8 +74,8 @@ export default function CheckInForm({
 
       <div>
         <label className="block text-sm font-medium text-slate-700 mb-1">Who are you here to see?</label>
-        <select name="worker_id" required className={inputClass}>
-          <option value="">Select a person</option>
+        <select name="worker_id" className={inputClass}>
+          <option value="">General Visit</option>
           {workers.map((w) => (
             <option key={w.id} value={w.id}>
               {w.name}

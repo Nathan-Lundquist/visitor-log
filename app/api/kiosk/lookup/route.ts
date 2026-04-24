@@ -8,11 +8,11 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Domain required" }, { status: 400 });
   }
 
-  const result = await sql`SELECT slug FROM companies WHERE domain = ${domain.trim().toLowerCase()}`;
+  const result = await sql`SELECT slug, name FROM companies WHERE domain = ${domain.trim().toLowerCase()}`;
 
   if (result.rows.length === 0) {
     return NextResponse.json({ error: "No company registered for this email domain" }, { status: 404 });
   }
 
-  return NextResponse.json({ slug: result.rows[0].slug });
+  return NextResponse.json({ slug: result.rows[0].slug, name: result.rows[0].name });
 }

@@ -1,0 +1,54 @@
+<h2>Design Approach — Kiosk Check-In Flow</h2>
+<p class="subtitle">How should the visitor experience feel on a lobby tablet?</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Full-Screen Wizard (Recommended)</h3>
+      <p>Each step takes the entire screen. Huge touch targets, one action per screen. Progress bar at top. Back/Next navigation at bottom. Feels like a premium kiosk — think airport check-in or hotel lobby iPad.</p>
+      <div style="margin-top:12px; padding:12px; background:#f0fdf4; border-radius:8px; font-size:14px;">
+        <strong>Steps:</strong> Welcome → Name → Phone → Who to See → Reason → License Photo → Sign NDA → Confirmation
+      </div>
+      <div class="pros-cons" style="margin-top:12px;">
+        <div class="pros"><h4>Pros</h4><ul><li>Dead simple for visitors</li><li>Perfect for tablets</li><li>Feels modern & premium</li><li>Easy to add/remove steps per client</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>More screens = more taps</li><li>More code to build</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Card-Stack Wizard</h3>
+      <p>Steps slide in as stacked cards from the bottom. Previous steps collapse behind. Visitor sees progress physically stacking up. Smooth animations between steps.</p>
+      <div style="margin-top:12px; padding:12px; background:#f0f9ff; border-radius:8px; font-size:14px;">
+        <strong>Flow:</strong> Same steps as A, but presented as layered cards with slide-up transitions
+      </div>
+      <div class="pros-cons" style="margin-top:12px;">
+        <div class="pros"><h4>Pros</h4><ul><li>Visually engaging</li><li>Shows progress naturally</li><li>Unique/memorable</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>More complex animations</li><li>Can feel cluttered on small tablets</li><li>Harder to go back to earlier steps</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Split View — Form + Live Log (Current, Refined)</h3>
+      <p>Keep the current split layout but upgrade each side. Left: multi-step form (not wizard, but sectioned). Right: live visitor log. Both visible at once on landscape tablets.</p>
+      <div style="margin-top:12px; padding:12px; background:#fefce8; border-radius:8px; font-size:14px;">
+        <strong>Best for:</strong> Front desk staff who need to see the log while checking someone in
+      </div>
+      <div class="pros-cons" style="margin-top:12px;">
+        <div class="pros"><h4>Pros</h4><ul><li>Dual-purpose screen</li><li>Less rework from current</li><li>Good for receptionist use</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>Cramped on portrait tablets</li><li>Not ideal for self-service</li><li>Doesn't feel like a premium kiosk</li></ul></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="margin-top:24px; padding:16px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px;">
+  <h3 style="margin-top:0;">My Recommendation: A (Full-Screen Wizard)</h3>
+  <p style="margin:8px 0 0; color:#475569;">Enterprise clients expect a polished, self-service experience. The full-screen wizard is the industry standard for visitor management SaaS (Envoy, SwipedOn, Proxyclick all use this pattern). It works for both self-service visitors AND receptionists, and the step-per-screen approach makes it trivial to add/remove steps per company later.</p>
+</div>

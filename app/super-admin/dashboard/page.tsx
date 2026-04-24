@@ -131,7 +131,7 @@ export default function SuperAdminDashboard() {
     <div className="min-h-screen bg-slate-50">
       <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
         <h1 className="text-xl font-bold text-slate-800">Super Admin</h1>
-        <a href="/super-admin" className="text-sm text-slate-500 hover:text-slate-700">Logout</a>
+        <a href="/" className="text-sm text-slate-500 hover:text-slate-700">Logout</a>
       </header>
 
       <div className="max-w-4xl mx-auto p-6">

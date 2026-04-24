@@ -1,0 +1,111 @@
+<h2>Kiosk Check-In — Card-Stack Wizard</h2>
+<p class="subtitle">How the visitor experience flows on a lobby tablet</p>
+
+<div class="split">
+  <!-- Step-by-step flow -->
+  <div class="mockup">
+    <div class="mockup-header">Flow Overview</div>
+    <div class="mockup-body" style="padding:20px; font-size:14px;">
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <div style="padding:14px 16px; background:#3b82f6; color:white; border-radius:12px; font-weight:600;">
+          1. Welcome Screen
+          <div style="font-weight:400; font-size:12px; margin-top:4px; opacity:0.85;">Company logo, name, "Tap to Check In" button</div>
+        </div>
+        <div style="padding:14px 16px; background:#60a5fa; color:white; border-radius:12px; font-weight:600;">
+          2. Your Name
+          <div style="font-weight:400; font-size:12px; margin-top:4px; opacity:0.85;">First name + last name, large keyboard-friendly inputs</div>
+        </div>
+        <div style="padding:14px 16px; background:#93c5fd; color:white; border-radius:12px; font-weight:600;">
+          3. Phone Number
+          <div style="font-weight:400; font-size:12px; margin-top:4px; opacity:0.85;">Numeric keypad-style input</div>
+        </div>
+        <div style="padding:14px 16px; background:#bfdbfe; color:#1e40af; border-radius:12px; font-weight:600;">
+          4. Who Are You Here To See?
+          <div style="font-weight:400; font-size:12px; margin-top:4px;">Scrollable list with search, or "General Visit"</div>
+        </div>
+        <div style="padding:14px 16px; background:#dbeafe; color:#1e40af; border-radius:12px; font-weight:600;">
+          5. Reason for Visit
+          <div style="font-weight:400; font-size:12px; margin-top:4px;">Preset options (Meeting, Delivery, Interview, Other) + custom text</div>
+        </div>
+        <div style="padding:14px 16px; background:#e0e7ff; color:#3730a3; border-radius:12px; font-weight:600;">
+          6. License Photo (if enabled)
+          <div style="font-weight:400; font-size:12px; margin-top:4px;">Camera capture of driver's license / ID</div>
+        </div>
+        <div style="padding:14px 16px; background:#ede9fe; color:#5b21b6; border-radius:12px; font-weight:600;">
+          7. Sign Agreement (if enabled)
+          <div style="font-weight:400; font-size:12px; margin-top:4px;">PDF viewer + signature pad at bottom</div>
+        </div>
+        <div style="padding:14px 16px; background:#22c55e; color:white; border-radius:12px; font-weight:600;">
+          8. Confirmation
+          <div style="font-weight:400; font-size:12px; margin-top:4px; opacity:0.85;">Check mark, "You're checked in!", auto-reset after 15s</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card stack visual -->
+  <div class="mockup">
+    <div class="mockup-header">Card-Stack Animation (Step 4 Active)</div>
+    <div class="mockup-body" style="padding:30px 20px; background:#f8fafc; min-height:400px; position:relative; overflow:hidden;">
+      <!-- Company header -->
+      <div style="text-align:center; margin-bottom:24px;">
+        <div style="width:48px; height:48px; background:#3b82f6; border-radius:12px; margin:0 auto 8px; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; font-size:18px;">B</div>
+        <div style="font-weight:700; color:#1e293b; font-size:16px;">Brico Welding</div>
+      </div>
+
+      <!-- Progress dots -->
+      <div style="display:flex; justify-content:center; gap:8px; margin-bottom:24px;">
+        <div style="width:10px; height:10px; border-radius:50%; background:#3b82f6;"></div>
+        <div style="width:10px; height:10px; border-radius:50%; background:#3b82f6;"></div>
+        <div style="width:10px; height:10px; border-radius:50%; background:#3b82f6;"></div>
+        <div style="width:10px; height:10px; border-radius:50%; background:#3b82f6;"></div>
+        <div style="width:10px; height:10px; border-radius:50%; background:#e2e8f0;"></div>
+        <div style="width:10px; height:10px; border-radius:50%; background:#e2e8f0;"></div>
+      </div>
+
+      <!-- Collapsed previous cards (stacked behind) -->
+      <div style="position:relative; margin:0 8px;">
+        <div style="background:#e2e8f0; border-radius:16px 16px 0 0; padding:10px 20px; margin:0 20px; font-size:12px; color:#94a3b8;">
+          John Smith
+        </div>
+        <div style="background:#e8ecf1; border-radius:16px 16px 0 0; padding:10px 20px; margin:0 10px; margin-top:-4px; font-size:12px; color:#94a3b8;">
+          (555) 123-4567
+        </div>
+
+        <!-- Active card -->
+        <div style="background:white; border-radius:20px; padding:32px 24px; box-shadow:0 8px 32px rgba(0,0,0,0.12); margin-top:-4px; position:relative; z-index:2;">
+          <h3 style="margin:0 0 4px; font-size:20px; color:#1e293b;">Who are you here to see?</h3>
+          <p style="margin:0 0 20px; font-size:13px; color:#94a3b8;">Select a person or choose General Visit</p>
+
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <div style="padding:14px 16px; border:2px solid #e2e8f0; border-radius:12px; font-size:15px; color:#475569; cursor:pointer;">General Visit</div>
+            <div style="padding:14px 16px; border:2px solid #3b82f6; background:#eff6ff; border-radius:12px; font-size:15px; color:#1e40af; font-weight:500; cursor:pointer;">
+              Helen Sova
+              <span style="font-size:12px; color:#64748b; font-weight:400;"> — Operations</span>
+            </div>
+            <div style="padding:14px 16px; border:2px solid #e2e8f0; border-radius:12px; font-size:15px; color:#475569; cursor:pointer;">Mike Chen
+              <span style="font-size:12px; color:#94a3b8;"> — Floor Manager</span>
+            </div>
+          </div>
+
+          <div style="display:flex; gap:12px; margin-top:24px;">
+            <button class="mock-button" style="flex:1; padding:16px; border-radius:12px; background:#f1f5f9; color:#475569; border:none; font-size:16px; font-weight:600;">Back</button>
+            <button class="mock-button" style="flex:2; padding:16px; border-radius:12px; background:#3b82f6; color:white; border:none; font-size:16px; font-weight:600;">Next</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="margin-top:24px; padding:16px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px;">
+  <h3 style="margin-top:0;">Key UX Details</h3>
+  <ul style="margin:8px 0 0; color:#475569; font-size:14px; line-height:1.8;">
+    <li><strong>Card animation:</strong> New steps slide up from bottom, previous steps collapse into a thin bar showing their summary (e.g. "John Smith", "(555) 123-4567")</li>
+    <li><strong>Back navigation:</strong> Tap a collapsed card or the Back button to expand it and edit</li>
+    <li><strong>Company branding:</strong> Logo + primary color applied to progress dots, buttons, and active card accents</li>
+    <li><strong>Configurable steps:</strong> License photo and NDA signing can be toggled on/off per company in admin settings</li>
+    <li><strong>Auto-reset:</strong> Confirmation screen returns to Welcome after 15 seconds of inactivity</li>
+    <li><strong>Reason presets:</strong> Common reasons as tap-to-select buttons (Meeting, Delivery, Interview, Contractor, Other)</li>
+  </ul>
+</div>

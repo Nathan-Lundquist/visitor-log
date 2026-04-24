@@ -32,15 +32,15 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const { email, password, company_id } = await req.json();
-
-  if (!email?.trim() || !password || !company_id) {
-    return NextResponse.json({ error: "Email, password, and company are required" }, { status: 400 });
-  }
-
-  const passwordHash = await sha256(`visitor-log-admin:${password}`);
-
   try {
+    const { email, password, company_id } = await req.json();
+
+    if (!email?.trim() || !password || !company_id) {
+      return NextResponse.json({ error: "Email, password, and company are required" }, { status: 400 });
+    }
+
+    const passwordHash = await sha256(`visitor-log-admin:${password}`);
+
     await sql`
       INSERT INTO admins (email, password_hash, company_id)
       VALUES (${email.trim().toLowerCase()}, ${passwordHash}, ${company_id})

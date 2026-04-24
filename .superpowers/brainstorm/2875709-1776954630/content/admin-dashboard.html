@@ -1,0 +1,155 @@
+<h2>Company Admin Dashboard</h2>
+<p class="subtitle">Where company admins manage their kiosk, workers, and agreements</p>
+
+<div class="mockup">
+  <div class="mockup-header">Admin Dashboard Layout</div>
+  <div class="mockup-body" style="padding:0; background:#f8fafc; min-height:500px;">
+
+    <!-- Top nav -->
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:16px 24px; background:white; border-bottom:1px solid #e2e8f0;">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <div style="width:32px; height:32px; background:#3b82f6; border-radius:8px; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; font-size:14px;">B</div>
+        <span style="font-weight:700; color:#1e293b; font-size:15px;">Brico Welding</span>
+      </div>
+      <div style="display:flex; align-items:center; gap:24px; font-size:13px;">
+        <span style="color:#3b82f6; font-weight:600; border-bottom:2px solid #3b82f6; padding-bottom:4px;">Visitors</span>
+        <span style="color:#64748b;">Workers</span>
+        <span style="color:#64748b;">Agreements</span>
+        <span style="color:#64748b;">Settings</span>
+        <span style="color:#94a3b8;">h.sova@bricowelding.com</span>
+      </div>
+    </div>
+
+    <div style="padding:24px;">
+
+      <!-- Stats row -->
+      <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:24px;">
+        <div style="background:white; border:1px solid #e2e8f0; border-radius:12px; padding:16px;">
+          <div style="font-size:12px; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px;">Checked In Now</div>
+          <div style="font-size:28px; font-weight:700; color:#1e293b; margin-top:4px;">3</div>
+        </div>
+        <div style="background:white; border:1px solid #e2e8f0; border-radius:12px; padding:16px;">
+          <div style="font-size:12px; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px;">Today</div>
+          <div style="font-size:28px; font-weight:700; color:#1e293b; margin-top:4px;">12</div>
+        </div>
+        <div style="background:white; border:1px solid #e2e8f0; border-radius:12px; padding:16px;">
+          <div style="font-size:12px; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px;">This Week</div>
+          <div style="font-size:28px; font-weight:700; color:#1e293b; margin-top:4px;">47</div>
+        </div>
+        <div style="background:white; border:1px solid #e2e8f0; border-radius:12px; padding:16px;">
+          <div style="font-size:12px; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px;">Workers</div>
+          <div style="font-size:28px; font-weight:700; color:#1e293b; margin-top:4px;">8</div>
+        </div>
+      </div>
+
+      <!-- Visitor table -->
+      <div style="background:white; border:1px solid #e2e8f0; border-radius:12px; overflow:hidden;">
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid #e2e8f0;">
+          <div style="font-weight:600; color:#1e293b;">Today's Visitors</div>
+          <div style="display:flex; gap:8px;">
+            <input class="mock-input" placeholder="Search..." style="width:180px; padding:8px 12px; font-size:13px; border-radius:8px;">
+            <select style="padding:8px 12px; border:1px solid #e2e8f0; border-radius:8px; font-size:13px; color:#64748b;">
+              <option>Today</option>
+              <option>This Week</option>
+              <option>This Month</option>
+            </select>
+            <button class="mock-button" style="padding:8px 16px; background:#f1f5f9; color:#475569; border:none; border-radius:8px; font-size:13px;">Export CSV</button>
+          </div>
+        </div>
+
+        <!-- Table header -->
+        <div style="display:grid; grid-template-columns:2fr 1.5fr 1.5fr 1fr 1fr 80px; padding:10px 20px; font-size:12px; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px; border-bottom:1px solid #f1f5f9;">
+          <div>Visitor</div>
+          <div>Visiting</div>
+          <div>Reason</div>
+          <div>In</div>
+          <div>Out</div>
+          <div>License</div>
+        </div>
+
+        <!-- Row 1 - checked in -->
+        <div style="display:grid; grid-template-columns:2fr 1.5fr 1.5fr 1fr 1fr 80px; padding:14px 20px; font-size:14px; border-bottom:1px solid #f8fafc; align-items:center;">
+          <div>
+            <div style="font-weight:500; color:#1e293b;">John Smith</div>
+            <div style="font-size:12px; color:#94a3b8;">(555) 123-4567</div>
+          </div>
+          <div style="color:#475569;">Helen Sova</div>
+          <div style="color:#475569;">Meeting</div>
+          <div style="color:#475569;">9:15 AM</div>
+          <div><span style="padding:4px 10px; background:#dcfce7; color:#16a34a; border-radius:20px; font-size:12px; font-weight:500;">In</span></div>
+          <div><span style="color:#3b82f6; font-size:13px; cursor:pointer;">View</span></div>
+        </div>
+
+        <!-- Row 2 - checked in -->
+        <div style="display:grid; grid-template-columns:2fr 1.5fr 1.5fr 1fr 1fr 80px; padding:14px 20px; font-size:14px; border-bottom:1px solid #f8fafc; align-items:center;">
+          <div>
+            <div style="font-weight:500; color:#1e293b;">Maria Garcia</div>
+            <div style="font-size:12px; color:#94a3b8;">(555) 987-6543</div>
+          </div>
+          <div style="color:#475569;">General Visit</div>
+          <div style="color:#475569;">Delivery</div>
+          <div style="color:#475569;">10:30 AM</div>
+          <div><span style="padding:4px 10px; background:#dcfce7; color:#16a34a; border-radius:20px; font-size:12px; font-weight:500;">In</span></div>
+          <div><span style="color:#3b82f6; font-size:13px; cursor:pointer;">View</span></div>
+        </div>
+
+        <!-- Row 3 - checked out -->
+        <div style="display:grid; grid-template-columns:2fr 1.5fr 1.5fr 1fr 1fr 80px; padding:14px 20px; font-size:14px; align-items:center; opacity:0.5;">
+          <div>
+            <div style="font-weight:500; color:#1e293b;">Bob Wilson</div>
+            <div style="font-size:12px; color:#94a3b8;">(555) 456-7890</div>
+          </div>
+          <div style="color:#475569;">Mike Chen</div>
+          <div style="color:#475569;">Interview</div>
+          <div style="color:#475569;">8:00 AM</div>
+          <div style="color:#475569;">8:45 AM</div>
+          <div><span style="color:#3b82f6; font-size:13px; cursor:pointer;">View</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="margin-top:24px;">
+  <h3>Admin Dashboard Tabs</h3>
+  <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:16px; margin-top:12px;">
+    <div style="background:white; border:1px solid #e2e8f0; border-radius:12px; padding:20px;">
+      <h3 style="margin:0 0 8px; font-size:16px; color:#1e293b;">Visitors Tab (shown above)</h3>
+      <ul style="margin:0; padding-left:20px; color:#475569; font-size:14px; line-height:1.8;">
+        <li>Quick stats bar (checked in now, today, week, workers)</li>
+        <li>Searchable, filterable visitor table</li>
+        <li>Date range picker</li>
+        <li>CSV export</li>
+        <li>View license photo per visitor</li>
+        <li>Green "In" / time "Out" status badges</li>
+      </ul>
+    </div>
+    <div style="background:white; border:1px solid #e2e8f0; border-radius:12px; padding:20px;">
+      <h3 style="margin:0 0 8px; font-size:16px; color:#1e293b;">Workers Tab</h3>
+      <ul style="margin:0; padding-left:20px; color:#475569; font-size:14px; line-height:1.8;">
+        <li>Add/edit/remove workers</li>
+        <li>Worker name, email, department/title</li>
+        <li>Email used for visit notifications</li>
+      </ul>
+    </div>
+    <div style="background:white; border:1px solid #e2e8f0; border-radius:12px; padding:20px;">
+      <h3 style="margin:0 0 8px; font-size:16px; color:#1e293b;">Agreements Tab</h3>
+      <ul style="margin:0; padding-left:20px; color:#475569; font-size:14px; line-height:1.8;">
+        <li>Upload company NDA/agreement PDF</li>
+        <li>Toggle agreement on/off for kiosk</li>
+        <li>View signed agreements per visitor</li>
+        <li>Download signed copies</li>
+      </ul>
+    </div>
+    <div style="background:white; border:1px solid #e2e8f0; border-radius:12px; padding:20px;">
+      <h3 style="margin:0 0 8px; font-size:16px; color:#1e293b;">Settings Tab</h3>
+      <ul style="margin:0; padding-left:20px; color:#475569; font-size:14px; line-height:1.8;">
+        <li>Company logo upload</li>
+        <li>Primary brand color picker</li>
+        <li>Welcome message</li>
+        <li>Toggle kiosk steps (license photo, NDA)</li>
+        <li>Kiosk URL for easy sharing</li>
+      </ul>
+    </div>
+  </div>
+</div>
