@@ -36,11 +36,28 @@ export default function VisitorsTab({ companyId }: { companyId: number }) {
     if (res.ok) setVisitors(await res.json());
   }
 
+  function csvCell(value: string): string {
+    const escaped = value.replace(/"/g, '""');
+    const dangerous = ["=", "+", "-", "@", "\t", "\r"];
+    if (dangerous.some((c) => escaped.startsWith(c))) {
+      return `"'${escaped}"`;
+    }
+    return `"${escaped}"`;
+  }
+
   function exportCSV() {
     const header = "First Name,Last Name,Phone,Visiting,Reason,Check In,Check Out";
     const rows = visitors.map(
       (v) =>
-        `"${v.first_name}","${v.last_name}","${v.phone}","${v.worker_name || "General Visit"}","${v.reason}","${new Date(v.checked_in_at).toLocaleString()}","${v.checked_out_at ? new Date(v.checked_out_at).toLocaleString() : "Still in"}"`
+        [
+          csvCell(v.first_name),
+          csvCell(v.last_name),
+          csvCell(v.phone),
+          csvCell(v.worker_name || "General Visit"),
+          csvCell(v.reason),
+          csvCell(new Date(v.checked_in_at).toLocaleString()),
+          csvCell(v.checked_out_at ? new Date(v.checked_out_at).toLocaleString() : "Still in"),
+        ].join(",")
     );
     const csv = [header, ...rows].join("\n");
     const blob = new Blob([csv], { type: "text/csv" });

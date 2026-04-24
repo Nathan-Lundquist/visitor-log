@@ -36,7 +36,8 @@ export default function SettingsTab() {
   }
 
   async function handleSave() {
-    await fetch("/api/admin/settings", {
+    if (!/^#[0-9a-fA-F]{6}$/.test(primaryColor)) return;
+    const res = await fetch("/api/admin/settings", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -45,8 +46,10 @@ export default function SettingsTab() {
         require_license: requireLicense,
       }),
     });
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    if (res.ok) {
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    }
   }
 
   async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
