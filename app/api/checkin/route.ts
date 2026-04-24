@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@vercel/postgres";
-import { notifyWorker } from "@/lib/email";
+import { notifyWorker, notifyAdmins } from "@/lib/email";
 
 export async function POST(req: NextRequest) {
   const { first_name, last_name, phone, worker_id, reason, company_id } = await req.json();
@@ -44,6 +44,28 @@ export async function POST(req: NextRequest) {
         minute: "2-digit",
       }),
       companyName,
+    }).catch(() => {});
+  }
+
+  // Notify all company admins
+  const adminsResult = await sql`SELECT email FROM admins WHERE company_id = ${company_id}`;
+  const adminEmails = adminsResult.rows.map((r: { email: string }) => r.email);
+
+  if (adminEmails.length > 0) {
+    const companyResult2 = await sql`SELECT name FROM companies WHERE id = ${company_id}`;
+    const companyNameForAdmin = companyResult2.rows[0]?.name || "Visitor Log";
+
+    notifyAdmins({
+      adminEmails,
+      visitorName: `${first_name} ${last_name}`,
+      phone,
+      reason,
+      workerName: worker?.name || null,
+      time: new Date(visitor.checked_in_at).toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+      companyName: companyNameForAdmin,
     }).catch(() => {});
   }
 
