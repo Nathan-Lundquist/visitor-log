@@ -7,7 +7,7 @@ export async function GET(req: NextRequest) {
   if (!companyId) {
     return NextResponse.json({ error: "companyId required" }, { status: 400 });
   }
-  const result = await sql`SELECT id, name, email FROM workers WHERE company_id = ${Number(companyId)} ORDER BY name`;
+  const result = await sql`SELECT id, name, email, title FROM workers WHERE company_id = ${Number(companyId)} ORDER BY name`;
   return NextResponse.json(result.rows);
 }
 
@@ -17,11 +17,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { name, email } = await req.json();
+  const { name, email, title } = await req.json();
   if (!name?.trim()) {
     return NextResponse.json({ error: "Name required" }, { status: 400 });
   }
-  await sql`INSERT INTO workers (name, email, company_id) VALUES (${name.trim()}, ${email?.trim() || null}, ${session.companyId})`;
+  await sql`INSERT INTO workers (name, email, title, company_id) VALUES (${name.trim()}, ${email?.trim() || null}, ${title?.trim() || null}, ${session.companyId})`;
   return NextResponse.json({ ok: true });
 }
 
@@ -31,11 +31,11 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { id, name, email } = await req.json();
+  const { id, name, email, title } = await req.json();
   if (!id || !name?.trim()) {
     return NextResponse.json({ error: "ID and name required" }, { status: 400 });
   }
-  await sql`UPDATE workers SET name = ${name.trim()}, email = ${email?.trim() || null} WHERE id = ${id} AND company_id = ${session.companyId}`;
+  await sql`UPDATE workers SET name = ${name.trim()}, email = ${email?.trim() || null}, title = ${title?.trim() || null} WHERE id = ${id} AND company_id = ${session.companyId}`;
   return NextResponse.json({ ok: true });
 }
 
