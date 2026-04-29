@@ -1,216 +1,399 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
-import { Company, Worker, Agreement, CheckInData } from "./types";
-import WelcomeStep from "./steps/WelcomeStep";
-import NameStep from "./steps/NameStep";
-import PhoneStep from "./steps/PhoneStep";
-import WorkerStep from "./steps/WorkerStep";
-import ReasonStep from "./steps/ReasonStep";
-import LicenseStep from "./steps/LicenseStep";
-import AgreementStep from "./steps/AgreementStep";
-import ConfirmationStep from "./steps/ConfirmationStep";
+import { useState, useEffect, useCallback } from "react";
+import { Company, Worker } from "./types";
 
-type StepId = "welcome" | "name" | "phone" | "worker" | "reason" | "license" | "agreement" | "confirmation";
-
-interface StepDef {
-  id: StepId;
-  label: string;
-  summary: (data: CheckInData) => string;
+interface CheckedInVisitor {
+  id: number;
+  first_name: string;
+  last_name: string;
+  phone: string;
+  worker_name: string | null;
+  reason: string;
+  checked_in_at: string;
+  checked_out_at: string | null;
 }
 
-const emptyData: CheckInData = {
-  first_name: "",
-  last_name: "",
-  phone: "",
-  worker_id: null,
-  worker_name: null,
-  reason: "",
-  license_photo: null,
-  signature_data: null,
-};
+const REASONS = ["Meeting", "Delivery", "Interview", "Contractor", "Other"];
 
 export default function KioskWizard({
   company,
   workers,
-  agreement,
 }: {
   company: Company;
   workers: Worker[];
-  agreement: Agreement | null;
+  agreement: { id: number; file_url: string; filename: string } | null;
 }) {
-  const [data, setData] = useState<CheckInData>({ ...emptyData });
-  const [currentStep, setCurrentStep] = useState<StepId>("welcome");
+  // Form state
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [workerId, setWorkerId] = useState<number | null>(null);
+  const [reason, setReason] = useState("");
+  const [customReason, setCustomReason] = useState("");
+  const [usCitizen, setUsCitizen] = useState<boolean | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState("");
 
-  // Build step list based on company config
-  const steps: StepDef[] = [
-    { id: "welcome", label: "Welcome", summary: () => "" },
-    { id: "name", label: "Name", summary: (d) => `${d.first_name} ${d.last_name}` },
-    { id: "phone", label: "Phone", summary: (d) => d.phone },
-    { id: "worker", label: "Visiting", summary: (d) => d.worker_name || "General Visit" },
-    { id: "reason", label: "Reason", summary: (d) => d.reason },
-    ...(company.require_license
-      ? [{ id: "license" as StepId, label: "ID Photo", summary: () => "Photo captured" }]
-      : []),
-    ...(company.require_agreement && agreement
-      ? [{ id: "agreement" as StepId, label: "Agreement", summary: () => "Signed" }]
-      : []),
-    { id: "confirmation", label: "Done", summary: () => "" },
-  ];
+  // Sign-out table state
+  const [visitors, setVisitors] = useState<CheckedInVisitor[]>([]);
 
-  const currentIndex = steps.findIndex((s) => s.id === currentStep);
-  // Steps that show in progress dots (exclude welcome and confirmation)
-  const progressSteps = steps.filter((s) => s.id !== "welcome" && s.id !== "confirmation");
-  const progressIndex = progressSteps.findIndex((s) => s.id === currentStep);
-
-  function updateData(updates: Partial<CheckInData>) {
-    setData((d) => ({ ...d, ...updates }));
-  }
-
-  function goNext() {
-    const nextIndex = currentIndex + 1;
-    if (nextIndex < steps.length) {
-      setCurrentStep(steps[nextIndex].id);
+  const loadVisitors = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/kiosk/visitors?companyId=${company.id}`);
+      if (res.ok) setVisitors(await res.json());
+    } catch {
+      // ignore
     }
-  }
+  }, [company.id]);
 
-  function goBack() {
-    const prevIndex = currentIndex - 1;
-    if (prevIndex >= 0) {
-      setCurrentStep(steps[prevIndex].id);
-    }
-  }
-
-  const reset = useCallback(() => {
-    setData({ ...emptyData });
-    setCurrentStep("welcome");
-  }, []);
-
-  // Submit check-in when reaching confirmation
   useEffect(() => {
-    if (currentStep !== "confirmation" || submitting) return;
-    setSubmitting(true);
+    loadVisitors();
+    const interval = setInterval(loadVisitors, 10_000);
+    return () => clearInterval(interval);
+  }, [loadVisitors]);
 
-    async function submit() {
-      try {
-        // 1. Create visitor record
-        const checkinRes = await fetch("/api/checkin", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            first_name: data.first_name,
-            last_name: data.last_name,
-            phone: data.phone,
-            worker_id: data.worker_id,
-            reason: data.reason,
-            company_id: company.id,
-          }),
-        });
+  function resetForm() {
+    setFirstName("");
+    setLastName("");
+    setPhone("");
+    setWorkerId(null);
+    setReason("");
+    setCustomReason("");
+    setUsCitizen(null);
+    setError("");
+    setSuccess(false);
+  }
 
-        if (!checkinRes.ok) return;
-        const { id: visitorId } = await checkinRes.json();
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
 
-        // 2. Upload license photo if captured
-        if (data.license_photo) {
-          const formData = new FormData();
-          formData.append("file", data.license_photo);
-          formData.append("visitor_id", String(visitorId));
-          await fetch("/api/kiosk/license", { method: "POST", body: formData }).catch(() => {});
-        }
-
-        // 3. Upload signature if signed
-        if (data.signature_data && agreement) {
-          await fetch("/api/kiosk/signature", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              visitor_id: visitorId,
-              agreement_id: agreement.id,
-              signature_data: data.signature_data,
-            }),
-          }).catch(() => {});
-        }
-      } catch {
-        // Silently fail — visitor is still shown confirmation
-      } finally {
-        setSubmitting(false);
-      }
+    const finalReason = reason === "Other" ? customReason.trim() : reason;
+    if (!firstName.trim() || !lastName.trim() || !phone.trim() || !finalReason) {
+      setError("Please fill out all required fields");
+      return;
+    }
+    if (usCitizen === null) {
+      setError("Please answer the US citizen question");
+      return;
     }
 
-    submit();
-  }, [currentStep]);
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/checkin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          first_name: firstName.trim(),
+          last_name: lastName.trim(),
+          phone: phone.trim(),
+          worker_id: workerId,
+          reason: finalReason,
+          company_id: company.id,
+          us_citizen: usCitizen,
+        }),
+      });
+      if (!res.ok) {
+        setError("Check-in failed. Please try again.");
+        return;
+      }
+      setSuccess(true);
+      loadVisitors();
+      setTimeout(() => resetForm(), 8000);
+    } catch {
+      setError("Check-in failed. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
 
-  // Collapsed cards for completed steps
-  const completedSteps = steps.slice(1, currentIndex).filter((s) => s.id !== "welcome");
+  async function checkOut(visitorId: number) {
+    await fetch("/api/kiosk/visitors", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ visitor_id: visitorId, company_id: company.id }),
+    });
+    loadVisitors();
+  }
+
+  const checkedIn = visitors.filter((v) => !v.checked_out_at);
+
+  const inputClass =
+    "w-full px-4 py-3 rounded-xl border border-slate-200 bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition text-slate-800 text-lg";
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
-      {/* Company header */}
-      {currentStep !== "welcome" && currentStep !== "confirmation" && (
-        <div className="flex items-center justify-center gap-3 pt-6 pb-2">
-          {company.logo_url && (
-            <img src={company.logo_url} alt={company.name} className="h-10 object-contain" />
-          )}
-          <span className="text-lg font-bold text-slate-800">{company.name}</span>
-        </div>
-      )}
-
-      {/* Progress dots */}
-      {currentStep !== "welcome" && currentStep !== "confirmation" && (
-        <div className="flex justify-center gap-2 py-4">
-          {progressSteps.map((s, i) => (
-            <div
-              key={s.id}
-              className="w-3 h-3 rounded-full transition-all"
-              style={{
-                backgroundColor: i <= progressIndex ? company.primary_color : "#e2e8f0",
-              }}
+    <div className="min-h-screen bg-slate-50">
+      {/* Header */}
+      <header
+        className="px-6 py-4 text-white shadow-sm"
+        style={{ backgroundColor: company.primary_color }}
+      >
+        <div className="max-w-3xl mx-auto flex items-center gap-3">
+          {company.logo_url ? (
+            <img
+              src={company.logo_url}
+              alt={company.name}
+              className="h-10 rounded-lg object-contain bg-white/20 p-1"
             />
-          ))}
-        </div>
-      )}
-
-      {/* Card stack area */}
-      <div className="flex-1 flex flex-col justify-end p-6 max-w-lg mx-auto w-full">
-        {/* Collapsed previous cards */}
-        {completedSteps.map((s) => (
-          <div
-            key={s.id}
-            onClick={() => setCurrentStep(s.id)}
-            className="bg-slate-200/60 rounded-t-2xl px-6 py-3 -mb-1 cursor-pointer hover:bg-slate-200 transition text-sm text-slate-500"
-            style={{ marginLeft: "8px", marginRight: "8px" }}
-          >
-            {s.summary(data)}
+          ) : (
+            <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center font-bold text-lg">
+              {company.name.charAt(0)}
+            </div>
+          )}
+          <div>
+            <h1 className="text-lg font-bold">{company.name}</h1>
+            <p className="text-sm opacity-80">
+              {company.welcome_message || "Visitor Check-In"}
+            </p>
           </div>
-        ))}
+        </div>
+      </header>
 
-        {/* Active card */}
-        <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-8 relative z-10">
-          {currentStep === "welcome" && (
-            <WelcomeStep company={company} onNext={goNext} />
+      <div className="max-w-3xl mx-auto p-6 space-y-6">
+        {/* Check-in form */}
+        <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-8">
+          {success ? (
+            <div className="flex flex-col items-center text-center py-10">
+              <div
+                className="w-20 h-20 rounded-full flex items-center justify-center mb-6"
+                style={{ backgroundColor: `${company.primary_color}15` }}
+              >
+                <svg
+                  className="w-10 h-10"
+                  style={{ color: company.primary_color }}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={3}
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <h2 className="text-3xl font-bold text-slate-800 mb-2">
+                You&apos;re Checked In!
+              </h2>
+              <p className="text-lg text-slate-500">
+                Welcome, {firstName} {lastName}
+              </p>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <h2 className="text-2xl font-bold text-slate-800 text-center mb-2">
+                Visitor Sign In
+              </h2>
+
+              {/* Name */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-600 mb-1">
+                    First Name *
+                  </label>
+                  <input
+                    type="text"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    className={inputClass}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-600 mb-1">
+                    Last Name *
+                  </label>
+                  <input
+                    type="text"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    className={inputClass}
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Phone */}
+              <div>
+                <label className="block text-sm font-medium text-slate-600 mb-1">
+                  Phone Number *
+                </label>
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="(555) 123-4567"
+                  className={inputClass}
+                  required
+                />
+              </div>
+
+              {/* Who are you here to see */}
+              <div>
+                <label className="block text-sm font-medium text-slate-600 mb-1">
+                  Who are you here to see?
+                </label>
+                <select
+                  value={workerId ?? ""}
+                  onChange={(e) =>
+                    setWorkerId(e.target.value ? Number(e.target.value) : null)
+                  }
+                  className={inputClass}
+                >
+                  <option value="">General Visit</option>
+                  {workers.map((w) => (
+                    <option key={w.id} value={w.id}>
+                      {w.name}
+                      {w.title ? ` — ${w.title}` : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Reason */}
+              <div>
+                <label className="block text-sm font-medium text-slate-600 mb-2">
+                  Reason for Visit *
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {REASONS.map((r) => (
+                    <button
+                      key={r}
+                      type="button"
+                      onClick={() => setReason(r)}
+                      className="px-4 py-2.5 rounded-xl border-2 text-sm font-medium transition"
+                      style={
+                        reason === r
+                          ? {
+                              borderColor: company.primary_color,
+                              backgroundColor: `${company.primary_color}10`,
+                              color: company.primary_color,
+                            }
+                          : {
+                              borderColor: "#e2e8f0",
+                              backgroundColor: "white",
+                              color: "#475569",
+                            }
+                      }
+                    >
+                      {r}
+                    </button>
+                  ))}
+                </div>
+                {reason === "Other" && (
+                  <input
+                    type="text"
+                    value={customReason}
+                    onChange={(e) => setCustomReason(e.target.value)}
+                    placeholder="Please specify"
+                    className={`${inputClass} mt-3`}
+                  />
+                )}
+              </div>
+
+              {/* US Citizen */}
+              <div>
+                <label className="block text-sm font-medium text-slate-600 mb-2">
+                  Are you a US citizen? *
+                </label>
+                <div className="flex gap-3">
+                  {[true, false].map((val) => (
+                    <button
+                      key={String(val)}
+                      type="button"
+                      onClick={() => setUsCitizen(val)}
+                      className="flex-1 py-3 rounded-xl border-2 text-base font-semibold transition"
+                      style={
+                        usCitizen === val
+                          ? {
+                              borderColor: company.primary_color,
+                              backgroundColor: `${company.primary_color}10`,
+                              color: company.primary_color,
+                            }
+                          : {
+                              borderColor: "#e2e8f0",
+                              backgroundColor: "white",
+                              color: "#475569",
+                            }
+                      }
+                    >
+                      {val ? "Yes" : "No"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3">
+                  {error}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={submitting}
+                style={{ backgroundColor: company.primary_color }}
+                className="w-full py-4 text-white text-lg font-semibold rounded-xl hover:opacity-90 disabled:opacity-50 transition shadow-lg"
+              >
+                {submitting ? "Checking in..." : "Sign In"}
+              </button>
+            </form>
           )}
-          {currentStep === "name" && (
-            <NameStep company={company} data={data} onUpdate={updateData} onNext={goNext} onBack={goBack} />
+        </div>
+
+        {/* Sign-out table */}
+        <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6">
+          <h2 className="text-lg font-bold text-slate-800 mb-4">
+            Sign Out
+            {checkedIn.length > 0 && (
+              <span className="ml-2 text-sm font-normal text-slate-400">
+                {checkedIn.length} checked in
+              </span>
+            )}
+          </h2>
+
+          {checkedIn.length === 0 ? (
+            <p className="text-slate-400 text-center py-6">
+              No visitors currently checked in
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {checkedIn.map((v) => (
+                <div
+                  key={v.id}
+                  className="flex items-center justify-between p-4 rounded-xl border border-slate-100 hover:border-slate-200 transition"
+                >
+                  <div>
+                    <p className="font-semibold text-slate-800">
+                      {v.first_name} {v.last_name}
+                    </p>
+                    <p className="text-sm text-slate-400">
+                      {new Date(v.checked_in_at).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                      {v.worker_name ? ` · Visiting ${v.worker_name}` : ""}
+                      {v.reason ? ` · ${v.reason}` : ""}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => checkOut(v.id)}
+                    className="px-5 py-2.5 text-sm font-semibold rounded-xl transition"
+                    style={{
+                      backgroundColor: `${company.primary_color}10`,
+                      color: company.primary_color,
+                      border: `1px solid ${company.primary_color}30`,
+                    }}
+                  >
+                    Sign Out
+                  </button>
+                </div>
+              ))}
+            </div>
           )}
-          {currentStep === "phone" && (
-            <PhoneStep company={company} data={data} onUpdate={updateData} onNext={goNext} onBack={goBack} />
-          )}
-          {currentStep === "worker" && (
-            <WorkerStep company={company} workers={workers} data={data} onUpdate={updateData} onNext={goNext} onBack={goBack} />
-          )}
-          {currentStep === "reason" && (
-            <ReasonStep company={company} data={data} onUpdate={updateData} onNext={goNext} onBack={goBack} />
-          )}
-          {currentStep === "license" && (
-            <LicenseStep company={company} data={data} onUpdate={updateData} onNext={goNext} onBack={goBack} />
-          )}
-          {currentStep === "agreement" && agreement && (
-            <AgreementStep company={company} agreement={agreement} data={data} onUpdate={updateData} onNext={goNext} onBack={goBack} />
-          )}
-          {currentStep === "confirmation" && (
-            <ConfirmationStep company={company} data={data} onReset={reset} />
-          )}
+
+          <p className="text-center text-xs text-slate-300 mt-4">
+            Auto-refreshes every 10 seconds
+          </p>
         </div>
       </div>
     </div>

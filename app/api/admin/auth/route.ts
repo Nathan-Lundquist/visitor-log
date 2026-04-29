@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
   const passwordHash = await sha256(`visitor-log-admin:${password}`);
 
   const result = await sql`
-    SELECT a.id, a.email, a.company_id, c.name AS company_name, c.slug AS company_slug
+    SELECT a.id, a.email, a.company_id, a.must_change_password, c.name AS company_name, c.slug AS company_slug
     FROM admins a
     JOIN companies c ON c.id = a.company_id
     WHERE a.email = ${cleanEmail} AND a.password_hash = ${passwordHash}
@@ -37,6 +37,7 @@ export async function POST(req: NextRequest) {
     companyId: admin.company_id,
     companyName: admin.company_name,
     companySlug: admin.company_slug,
+    mustChangePassword: admin.must_change_password || false,
   };
 
   const encoded = Buffer.from(JSON.stringify(session)).toString("base64");

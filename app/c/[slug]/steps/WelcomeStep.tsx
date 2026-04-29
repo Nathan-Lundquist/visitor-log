@@ -5,9 +5,11 @@ import { Company } from "../types";
 export default function WelcomeStep({
   company,
   onNext,
+  onSignOut,
 }: {
   company: Company;
   onNext: () => void;
+  onSignOut: () => void;
 }) {
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-8">
@@ -28,6 +30,13 @@ export default function WelcomeStep({
         className="px-16 py-5 text-white text-2xl font-semibold rounded-2xl shadow-lg hover:opacity-90 transition active:scale-95"
       >
         Tap to Check In
+      </button>
+
+      <button
+        onClick={onSignOut}
+        className="mt-6 text-slate-400 hover:text-slate-600 text-base transition"
+      >
+        Need to sign out?
       </button>
     </div>
   );

@@ -3,7 +3,7 @@ import { sql } from "@vercel/postgres";
 import { notifyWorker, notifyAdmins } from "@/lib/email";
 
 export async function POST(req: NextRequest) {
-  const { first_name, last_name, phone, worker_id, reason, company_id } = await req.json();
+  const { first_name, last_name, phone, worker_id, reason, company_id, us_citizen } = await req.json();
 
   if (!first_name || !last_name || !phone || !reason || !company_id) {
     return NextResponse.json({ error: "All fields required" }, { status: 400 });
@@ -21,8 +21,8 @@ export async function POST(req: NextRequest) {
   }
 
   const result = await sql`
-    INSERT INTO visitors (first_name, last_name, phone, worker_id, company_id, reason)
-    VALUES (${first_name}, ${last_name}, ${phone}, ${worker_id || null}, ${company_id}, ${reason})
+    INSERT INTO visitors (first_name, last_name, phone, worker_id, company_id, reason, us_citizen)
+    VALUES (${first_name}, ${last_name}, ${phone}, ${worker_id || null}, ${company_id}, ${reason}, ${us_citizen ?? null})
     RETURNING id, checked_in_at
   `;
 

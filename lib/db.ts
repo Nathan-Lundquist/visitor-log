@@ -48,6 +48,7 @@ export async function ensureTables() {
   await sql`ALTER TABLE workers ADD COLUMN IF NOT EXISTS company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE`;
   await sql`ALTER TABLE visitors ADD COLUMN IF NOT EXISTS company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE`;
   await sql`ALTER TABLE visitors ADD COLUMN IF NOT EXISTS checked_out_at TIMESTAMP`;
+  await sql`ALTER TABLE visitors ADD COLUMN IF NOT EXISTS us_citizen BOOLEAN`;
 
   // New columns on companies
   await sql`ALTER TABLE companies ADD COLUMN IF NOT EXISTS primary_color TEXT DEFAULT '#3b82f6'`;
@@ -56,6 +57,9 @@ export async function ensureTables() {
 
   // New column on workers
   await sql`ALTER TABLE workers ADD COLUMN IF NOT EXISTS title TEXT`;
+
+  // Admin password change tracking
+  await sql`ALTER TABLE admins ADD COLUMN IF NOT EXISTS must_change_password BOOLEAN DEFAULT false`;
 
   // Agreements table
   await sql`

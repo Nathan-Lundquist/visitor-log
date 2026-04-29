@@ -5,6 +5,7 @@ interface AdminSession {
   companyId: number;
   companyName: string;
   companySlug: string;
+  mustChangePassword?: boolean;
 }
 
 export async function getAdminSession(): Promise<AdminSession | null> {
