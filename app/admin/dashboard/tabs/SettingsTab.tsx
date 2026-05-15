@@ -10,6 +10,7 @@ interface Settings {
   primary_color: string;
   require_license: boolean;
   require_agreement: boolean;
+  other_notify_email: string | null;
 }
 
 export default function SettingsTab() {
@@ -17,6 +18,7 @@ export default function SettingsTab() {
   const [welcomeMessage, setWelcomeMessage] = useState("");
   const [primaryColor, setPrimaryColor] = useState("#3b82f6");
   const [requireLicense, setRequireLicense] = useState(false);
+  const [otherNotifyEmail, setOtherNotifyEmail] = useState("");
   const [saved, setSaved] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
 
@@ -32,6 +34,7 @@ export default function SettingsTab() {
       setWelcomeMessage(data.welcome_message || "");
       setPrimaryColor(data.primary_color || "#3b82f6");
       setRequireLicense(data.require_license || false);
+      setOtherNotifyEmail(data.other_notify_email || "");
     }
   }
 
@@ -44,6 +47,7 @@ export default function SettingsTab() {
         welcome_message: welcomeMessage.trim() || null,
         primary_color: primaryColor,
         require_license: requireLicense,
+        other_notify_email: otherNotifyEmail.trim() || null,
       }),
     });
     if (res.ok) {
@@ -187,6 +191,26 @@ export default function SettingsTab() {
               <span className={`absolute top-0.5 w-6 h-6 bg-white rounded-full shadow ${settings.require_agreement ? "translate-x-5" : "translate-x-0.5"}`} />
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Notifications */}
+      <div className="bg-white rounded-xl border border-slate-200 p-6">
+        <h2 className="text-lg font-semibold text-slate-800 mb-4">Notifications</h2>
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">
+            &quot;Other&quot; Reason Notify Email
+          </label>
+          <p className="text-sm text-slate-400 mb-2">
+            When a visitor checks in without selecting a specific employee (General Visit), send a notification to this email address.
+          </p>
+          <input
+            value={otherNotifyEmail}
+            onChange={(e) => setOtherNotifyEmail(e.target.value)}
+            placeholder="e.g. office@company.com"
+            type="email"
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition"
+          />
         </div>
       </div>
 

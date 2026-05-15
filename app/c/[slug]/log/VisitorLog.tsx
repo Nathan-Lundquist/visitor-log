@@ -11,6 +11,9 @@ interface Visitor {
   reason: string;
   checked_in_at: string;
   checked_out_at: string | null;
+  us_citizen: boolean | null;
+  company_name: string | null;
+  badge_number: string | null;
 }
 
 interface CompanyInfo {
@@ -99,8 +102,11 @@ export default function VisitorLog({ company }: { company: CompanyInfo }) {
                 <thead>
                   <tr className="border-b border-slate-100">
                     <th className="text-left px-4 py-3 font-medium text-slate-500">Visitor</th>
+                    <th className="text-left px-4 py-3 font-medium text-slate-500">Company</th>
                     <th className="text-left px-4 py-3 font-medium text-slate-500">Visiting</th>
                     <th className="text-left px-4 py-3 font-medium text-slate-500">Reason</th>
+                    <th className="text-left px-4 py-3 font-medium text-slate-500">Citizen</th>
+                    <th className="text-left px-4 py-3 font-medium text-slate-500">Badge</th>
                     <th className="text-left px-4 py-3 font-medium text-slate-500">In</th>
                     <th className="px-4 py-3"></th>
                   </tr>
@@ -114,10 +120,21 @@ export default function VisitorLog({ company }: { company: CompanyInfo }) {
                         </div>
                         <div className="text-xs text-slate-400">{v.phone}</div>
                       </td>
+                      <td className="px-4 py-3 text-slate-600">{v.company_name || "—"}</td>
                       <td className="px-4 py-3 text-slate-600">
                         {v.worker_name || "General Visit"}
                       </td>
                       <td className="px-4 py-3 text-slate-600">{v.reason}</td>
+                      <td className="px-4 py-3">
+                        {v.us_citizen === true && (
+                          <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-green-100 text-green-700">Yes</span>
+                        )}
+                        {v.us_citizen === false && (
+                          <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-amber-100 text-amber-700">No</span>
+                        )}
+                        {v.us_citizen === null && <span className="text-slate-300">—</span>}
+                      </td>
+                      <td className="px-4 py-3 text-slate-600">{v.badge_number || "—"}</td>
                       <td className="px-4 py-3 text-slate-500">
                         {new Date(v.checked_in_at).toLocaleTimeString([], {
                           hour: "2-digit",
@@ -163,8 +180,11 @@ export default function VisitorLog({ company }: { company: CompanyInfo }) {
                 <thead>
                   <tr className="border-b border-slate-100">
                     <th className="text-left px-4 py-3 font-medium text-slate-500">Visitor</th>
+                    <th className="text-left px-4 py-3 font-medium text-slate-500">Company</th>
                     <th className="text-left px-4 py-3 font-medium text-slate-500">Visiting</th>
                     <th className="text-left px-4 py-3 font-medium text-slate-500">Reason</th>
+                    <th className="text-left px-4 py-3 font-medium text-slate-500">Citizen</th>
+                    <th className="text-left px-4 py-3 font-medium text-slate-500">Badge</th>
                     <th className="text-left px-4 py-3 font-medium text-slate-500">In</th>
                     <th className="text-left px-4 py-3 font-medium text-slate-500">Out</th>
                   </tr>
@@ -178,10 +198,21 @@ export default function VisitorLog({ company }: { company: CompanyInfo }) {
                         </div>
                         <div className="text-xs text-slate-400">{v.phone}</div>
                       </td>
+                      <td className="px-4 py-3 text-slate-600">{v.company_name || "—"}</td>
                       <td className="px-4 py-3 text-slate-600">
                         {v.worker_name || "General Visit"}
                       </td>
                       <td className="px-4 py-3 text-slate-600">{v.reason}</td>
+                      <td className="px-4 py-3">
+                        {v.us_citizen === true && (
+                          <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-green-100 text-green-700">Yes</span>
+                        )}
+                        {v.us_citizen === false && (
+                          <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-amber-100 text-amber-700">No</span>
+                        )}
+                        {v.us_citizen === null && <span className="text-slate-300">—</span>}
+                      </td>
+                      <td className="px-4 py-3 text-slate-600">{v.badge_number || "—"}</td>
                       <td className="px-4 py-3 text-slate-500">
                         {new Date(v.checked_in_at).toLocaleTimeString([], {
                           hour: "2-digit",

@@ -46,6 +46,38 @@ interface AdminNotification {
   companyName: string;
 }
 
+interface OtherReasonNotification {
+  toEmail: string;
+  visitorName: string;
+  phone: string;
+  reason: string;
+  companyName: string;
+  time: string;
+}
+
+export async function notifyOtherReason(data: OtherReasonNotification) {
+  if (!resend) return;
+
+  const fromAddress = process.env.EMAIL_FROM || "Visitor Log <noreply@resend.dev>";
+
+  await resend.emails.send({
+    from: fromAddress,
+    to: data.toEmail,
+    subject: `Visitor Check-In (Other): ${data.visitorName}`,
+    html: `
+      <div style="font-family: system-ui, sans-serif; max-width: 480px;">
+        <h2 style="margin-bottom: 4px;">Visitor Check-In — ${data.companyName}</h2>
+        <p><strong>${data.visitorName}</strong> has checked in with reason "Other".</p>
+        <table style="border-collapse: collapse; margin: 16px 0;">
+          <tr><td style="padding: 4px 12px 4px 0; color: #666;">Phone</td><td>${data.phone}</td></tr>
+          <tr><td style="padding: 4px 12px 4px 0; color: #666;">Reason</td><td>${data.reason}</td></tr>
+          <tr><td style="padding: 4px 12px 4px 0; color: #666;">Time</td><td>${data.time}</td></tr>
+        </table>
+      </div>
+    `,
+  });
+}
+
 export async function notifyAdmins(data: AdminNotification) {
   if (!resend || data.adminEmails.length === 0) return;
 

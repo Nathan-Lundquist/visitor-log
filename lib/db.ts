@@ -58,6 +58,13 @@ export async function ensureTables() {
   // New column on workers
   await sql`ALTER TABLE workers ADD COLUMN IF NOT EXISTS title TEXT`;
 
+  // Visitor company name and badge number
+  await sql`ALTER TABLE visitors ADD COLUMN IF NOT EXISTS company_name TEXT`;
+  await sql`ALTER TABLE visitors ADD COLUMN IF NOT EXISTS badge_number TEXT`;
+
+  // "Other" reason notification email on companies
+  await sql`ALTER TABLE companies ADD COLUMN IF NOT EXISTS other_notify_email TEXT`;
+
   // Admin password change tracking
   await sql`ALTER TABLE admins ADD COLUMN IF NOT EXISTS must_change_password BOOLEAN DEFAULT false`;
 

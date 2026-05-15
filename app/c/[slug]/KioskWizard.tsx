@@ -12,6 +12,9 @@ interface CheckedInVisitor {
   reason: string;
   checked_in_at: string;
   checked_out_at: string | null;
+  us_citizen: boolean | null;
+  company_name: string | null;
+  badge_number: string | null;
 }
 
 const REASONS = ["Meeting", "Delivery", "Interview", "Contractor", "Other"];
@@ -32,6 +35,8 @@ export default function KioskWizard({
   const [reason, setReason] = useState("");
   const [customReason, setCustomReason] = useState("");
   const [usCitizen, setUsCitizen] = useState<boolean | null>(null);
+  const [companyName, setCompanyName] = useState("");
+  const [badgeNumber, setBadgeNumber] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
@@ -62,6 +67,8 @@ export default function KioskWizard({
     setReason("");
     setCustomReason("");
     setUsCitizen(null);
+    setCompanyName("");
+    setBadgeNumber("");
     setError("");
     setSuccess(false);
   }
@@ -93,6 +100,8 @@ export default function KioskWizard({
           reason: finalReason,
           company_id: company.id,
           us_citizen: usCitizen,
+          company_name: companyName.trim() || null,
+          badge_number: badgeNumber.trim() || null,
         }),
       });
       if (!res.ok) {
@@ -227,6 +236,20 @@ export default function KioskWizard({
                 />
               </div>
 
+              {/* Company */}
+              <div>
+                <label className="block text-sm font-medium text-slate-600 mb-1">
+                  Company
+                </label>
+                <input
+                  type="text"
+                  value={companyName}
+                  onChange={(e) => setCompanyName(e.target.value)}
+                  placeholder="Your company name"
+                  className={inputClass}
+                />
+              </div>
+
               {/* Who are you here to see */}
               <div>
                 <label className="block text-sm font-medium text-slate-600 mb-1">
@@ -322,6 +345,20 @@ export default function KioskWizard({
                 </div>
               </div>
 
+              {/* Badge Number */}
+              <div>
+                <label className="block text-sm font-medium text-slate-600 mb-1">
+                  Badge Number
+                </label>
+                <input
+                  type="text"
+                  value={badgeNumber}
+                  onChange={(e) => setBadgeNumber(e.target.value)}
+                  placeholder="Assigned badge #"
+                  className={inputClass}
+                />
+              </div>
+
               {error && (
                 <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3">
                   {error}
@@ -363,16 +400,30 @@ export default function KioskWizard({
                   className="flex items-center justify-between p-4 rounded-xl border border-slate-100 hover:border-slate-200 transition"
                 >
                   <div>
-                    <p className="font-semibold text-slate-800">
-                      {v.first_name} {v.last_name}
-                    </p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-semibold text-slate-800">
+                        {v.first_name} {v.last_name}
+                      </p>
+                      {v.us_citizen === false && (
+                        <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-amber-100 text-amber-700">
+                          Non-Citizen
+                        </span>
+                      )}
+                      {v.us_citizen === true && (
+                        <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-green-100 text-green-700">
+                          US Citizen
+                        </span>
+                      )}
+                    </div>
                     <p className="text-sm text-slate-400">
                       {new Date(v.checked_in_at).toLocaleTimeString([], {
                         hour: "2-digit",
                         minute: "2-digit",
                       })}
+                      {v.company_name ? ` · ${v.company_name}` : ""}
                       {v.worker_name ? ` · Visiting ${v.worker_name}` : ""}
                       {v.reason ? ` · ${v.reason}` : ""}
+                      {v.badge_number ? ` · Badge #${v.badge_number}` : ""}
                     </p>
                   </div>
                   <button

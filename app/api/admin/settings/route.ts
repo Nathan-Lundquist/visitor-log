@@ -9,7 +9,7 @@ export async function GET() {
   }
 
   const result = await sql`
-    SELECT name, slug, logo_url, welcome_message, primary_color, require_license, require_agreement
+    SELECT name, slug, logo_url, welcome_message, primary_color, require_license, require_agreement, other_notify_email
     FROM companies WHERE id = ${session.companyId}
   `;
 
@@ -22,13 +22,14 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { welcome_message, primary_color, require_license } = await req.json();
+  const { welcome_message, primary_color, require_license, other_notify_email } = await req.json();
 
   await sql`
     UPDATE companies SET
       welcome_message = ${welcome_message ?? null},
       primary_color = ${primary_color ?? "#3b82f6"},
-      require_license = ${require_license ?? false}
+      require_license = ${require_license ?? false},
+      other_notify_email = ${other_notify_email || null}
     WHERE id = ${session.companyId}
   `;
 

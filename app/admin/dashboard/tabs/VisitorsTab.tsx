@@ -12,23 +12,30 @@ interface Visitor {
   checked_in_at: string;
   checked_out_at: string | null;
   license_photo_url: string | null;
+  us_citizen: boolean | null;
+  company_name: string | null;
+  badge_number: string | null;
 }
 
 export default function VisitorsTab({ companyId }: { companyId: number }) {
   const [visitors, setVisitors] = useState<Visitor[]>([]);
   const [dateFilter, setDateFilter] = useState(() => new Date().toISOString().split("T")[0]);
-  const [rangeFilter, setRangeFilter] = useState<"date" | "week" | "month">("date");
+  const [rangeFilter, setRangeFilter] = useState<"date" | "week" | "month" | "range">("date");
+  const [startDate, setStartDate] = useState(() => new Date().toISOString().split("T")[0]);
+  const [endDate, setEndDate] = useState(() => new Date().toISOString().split("T")[0]);
   const [search, setSearch] = useState("");
   const [licenseUrl, setLicenseUrl] = useState<string | null>(null);
 
   useEffect(() => {
     loadVisitors();
-  }, [dateFilter, rangeFilter]);
+  }, [dateFilter, rangeFilter, startDate, endDate]);
 
   async function loadVisitors() {
     let url = `/api/visitors?companyId=${companyId}`;
     if (rangeFilter === "date") {
       url += `&date=${dateFilter}`;
+    } else if (rangeFilter === "range") {
+      url += `&startDate=${startDate}&endDate=${endDate}`;
     } else {
       url += `&range=${rangeFilter}`;
     }
@@ -46,15 +53,18 @@ export default function VisitorsTab({ companyId }: { companyId: number }) {
   }
 
   function exportCSV() {
-    const header = "First Name,Last Name,Phone,Visiting,Reason,Check In,Check Out";
-    const rows = visitors.map(
+    const header = "First Name,Last Name,Phone,Company,Visiting,Reason,US Citizen,Badge #,Check In,Check Out";
+    const rows = filtered.map(
       (v) =>
         [
           csvCell(v.first_name),
           csvCell(v.last_name),
           csvCell(v.phone),
+          csvCell(v.company_name || ""),
           csvCell(v.worker_name || "General Visit"),
           csvCell(v.reason),
+          csvCell(v.us_citizen === true ? "Yes" : v.us_citizen === false ? "No" : ""),
+          csvCell(v.badge_number || ""),
           csvCell(new Date(v.checked_in_at).toLocaleString()),
           csvCell(v.checked_out_at ? new Date(v.checked_out_at).toLocaleString() : "Still in"),
         ].join(",")
@@ -64,7 +74,7 @@ export default function VisitorsTab({ companyId }: { companyId: number }) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `visitors-${dateFilter}.csv`;
+    a.download = `visitors-${rangeFilter === "range" ? `${startDate}_${endDate}` : dateFilter}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -75,14 +85,15 @@ export default function VisitorsTab({ companyId }: { companyId: number }) {
     return (
       v.first_name.toLowerCase().includes(s) ||
       v.last_name.toLowerCase().includes(s) ||
-      (v.worker_name && v.worker_name.toLowerCase().includes(s))
+      (v.worker_name && v.worker_name.toLowerCase().includes(s)) ||
+      (v.company_name && v.company_name.toLowerCase().includes(s))
     );
   });
 
   return (
     <div className="bg-white rounded-xl border border-slate-200">
       <div className="p-4 border-b border-slate-200 flex flex-wrap items-center gap-3 justify-between">
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <input
             type="text"
             value={search}
@@ -92,12 +103,13 @@ export default function VisitorsTab({ companyId }: { companyId: number }) {
           />
           <select
             value={rangeFilter}
-            onChange={(e) => setRangeFilter(e.target.value as "date" | "week" | "month")}
+            onChange={(e) => setRangeFilter(e.target.value as "date" | "week" | "month" | "range")}
             className="px-3 py-2 border border-slate-300 rounded-lg text-sm"
           >
             <option value="date">Specific Date</option>
             <option value="week">This Week</option>
             <option value="month">This Month</option>
+            <option value="range">Date Range</option>
           </select>
           {rangeFilter === "date" && (
             <input
@@ -106,6 +118,23 @@ export default function VisitorsTab({ companyId }: { companyId: number }) {
               onChange={(e) => setDateFilter(e.target.value)}
               className="px-3 py-2 border border-slate-300 rounded-lg text-sm"
             />
+          )}
+          {rangeFilter === "range" && (
+            <>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="px-3 py-2 border border-slate-300 rounded-lg text-sm"
+              />
+              <span className="text-slate-400 text-sm">to</span>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="px-3 py-2 border border-slate-300 rounded-lg text-sm"
+              />
+            </>
           )}
         </div>
         <div className="flex items-center gap-3">
@@ -127,8 +156,11 @@ export default function VisitorsTab({ companyId }: { companyId: number }) {
             <thead>
               <tr className="border-b border-slate-100">
                 <th className="text-left px-4 py-3 font-medium text-slate-500">Visitor</th>
+                <th className="text-left px-4 py-3 font-medium text-slate-500">Company</th>
                 <th className="text-left px-4 py-3 font-medium text-slate-500">Visiting</th>
                 <th className="text-left px-4 py-3 font-medium text-slate-500">Reason</th>
+                <th className="text-left px-4 py-3 font-medium text-slate-500">Citizen</th>
+                <th className="text-left px-4 py-3 font-medium text-slate-500">Badge</th>
                 <th className="text-left px-4 py-3 font-medium text-slate-500">In</th>
                 <th className="text-left px-4 py-3 font-medium text-slate-500">Out</th>
                 <th className="text-left px-4 py-3 font-medium text-slate-500">License</th>
@@ -141,8 +173,19 @@ export default function VisitorsTab({ companyId }: { companyId: number }) {
                     <div className="font-medium">{v.first_name} {v.last_name}</div>
                     <div className="text-xs text-slate-400">{v.phone}</div>
                   </td>
+                  <td className="px-4 py-3 text-slate-600">{v.company_name || "—"}</td>
                   <td className="px-4 py-3 text-slate-600">{v.worker_name || "General Visit"}</td>
                   <td className="px-4 py-3 text-slate-600">{v.reason}</td>
+                  <td className="px-4 py-3">
+                    {v.us_citizen === true && (
+                      <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-green-100 text-green-700">Yes</span>
+                    )}
+                    {v.us_citizen === false && (
+                      <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-amber-100 text-amber-700">No</span>
+                    )}
+                    {v.us_citizen === null && <span className="text-slate-300">—</span>}
+                  </td>
+                  <td className="px-4 py-3 text-slate-600">{v.badge_number || "—"}</td>
                   <td className="px-4 py-3 text-slate-500">
                     {new Date(v.checked_in_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                   </td>

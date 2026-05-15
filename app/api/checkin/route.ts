@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@vercel/postgres";
-import { notifyWorker, notifyAdmins } from "@/lib/email";
+import { notifyWorker, notifyAdmins, notifyOtherReason } from "@/lib/email";
 
 export async function POST(req: NextRequest) {
-  const { first_name, last_name, phone, worker_id, reason, company_id, us_citizen } = await req.json();
+  const { first_name, last_name, phone, worker_id, reason, company_id, us_citizen, company_name, badge_number } = await req.json();
 
   if (!first_name || !last_name || !phone || !reason || !company_id) {
     return NextResponse.json({ error: "All fields required" }, { status: 400 });
@@ -21,28 +21,32 @@ export async function POST(req: NextRequest) {
   }
 
   const result = await sql`
-    INSERT INTO visitors (first_name, last_name, phone, worker_id, company_id, reason, us_citizen)
-    VALUES (${first_name}, ${last_name}, ${phone}, ${worker_id || null}, ${company_id}, ${reason}, ${us_citizen ?? null})
+    INSERT INTO visitors (first_name, last_name, phone, worker_id, company_id, reason, us_citizen, company_name, badge_number)
+    VALUES (${first_name}, ${last_name}, ${phone}, ${worker_id || null}, ${company_id}, ${reason}, ${us_citizen ?? null}, ${company_name || null}, ${badge_number || null})
     RETURNING id, checked_in_at
   `;
 
   const visitor = result.rows[0];
 
-  // Send email notification (non-blocking)
-  if (worker?.email) {
-    const companyResult = await sql`SELECT name FROM companies WHERE id = ${company_id}`;
-    const companyName = companyResult.rows[0]?.name || "Visitor Log";
+  // Fetch company info once for all notifications
+  const companyResult = await sql`SELECT name, other_notify_email FROM companies WHERE id = ${company_id}`;
+  const companyName = companyResult.rows[0]?.name || "Visitor Log";
+  const otherNotifyEmail = companyResult.rows[0]?.other_notify_email;
 
+  const timeStr = new Date(visitor.checked_in_at).toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  // Send email notification to worker (non-blocking)
+  if (worker?.email) {
     notifyWorker({
       workerName: worker.name,
       workerEmail: worker.email,
       visitorName: `${first_name} ${last_name}`,
       phone,
       reason,
-      time: new Date(visitor.checked_in_at).toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
+      time: timeStr,
       companyName,
     }).catch(() => {});
   }
@@ -52,20 +56,26 @@ export async function POST(req: NextRequest) {
   const adminEmails = adminsResult.rows.map((r) => r.email as string);
 
   if (adminEmails.length > 0) {
-    const companyResult2 = await sql`SELECT name FROM companies WHERE id = ${company_id}`;
-    const companyNameForAdmin = companyResult2.rows[0]?.name || "Visitor Log";
-
     notifyAdmins({
       adminEmails,
       visitorName: `${first_name} ${last_name}`,
       phone,
       reason,
       workerName: worker?.name || null,
-      time: new Date(visitor.checked_in_at).toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-      companyName: companyNameForAdmin,
+      time: timeStr,
+      companyName,
+    }).catch(() => {});
+  }
+
+  // Notify "Other" reason email if configured and reason is Other-type
+  if (otherNotifyEmail && !worker_id) {
+    notifyOtherReason({
+      toEmail: otherNotifyEmail,
+      visitorName: `${first_name} ${last_name}`,
+      phone,
+      reason,
+      companyName,
+      time: timeStr,
     }).catch(() => {});
   }
 

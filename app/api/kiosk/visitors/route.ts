@@ -10,6 +10,7 @@ export async function GET(req: NextRequest) {
 
   const result = await sql`
     SELECT v.id, v.first_name, v.last_name, v.phone, v.reason, v.checked_in_at, v.checked_out_at,
+           v.us_citizen, v.company_name, v.badge_number,
            w.name AS worker_name
     FROM visitors v
     LEFT JOIN workers w ON w.id = v.worker_id
