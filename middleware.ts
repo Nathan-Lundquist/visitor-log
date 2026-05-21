@@ -1,4 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
+import crypto from "crypto";
+
+const SESSION_SECRET = process.env.SESSION_SECRET || "visitor-log-default-secret-change-me";
+
+function verifySession(raw: string): Record<string, unknown> | null {
+  try {
+    const dotIndex = raw.lastIndexOf(".");
+    if (dotIndex === -1) return null;
+
+    const payload = raw.substring(0, dotIndex);
+    const signature = raw.substring(dotIndex + 1);
+
+    const expected = crypto.createHmac("sha256", SESSION_SECRET).update(payload).digest("hex");
+    if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) {
+      return null;
+    }
+
+    return JSON.parse(Buffer.from(payload, "base64").toString());
+  } catch {
+    return null;
+  }
+}
 
 export function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
@@ -9,12 +31,10 @@ export function middleware(request: NextRequest) {
     let isPcshards = false;
 
     if (raw) {
-      try {
-        const session = JSON.parse(Buffer.from(raw, "base64").toString());
-        if (session.email?.endsWith("@pcshards.com")) {
-          isPcshards = true;
-        }
-      } catch {}
+      const session = verifySession(raw);
+      if (session && typeof session.email === "string" && session.email.endsWith("@pcshards.com")) {
+        isPcshards = true;
+      }
     }
 
     if (!isPcshards) {

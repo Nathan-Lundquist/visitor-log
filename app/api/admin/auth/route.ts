@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
+import { createSessionCookie } from "@/auth";
 
 async function sha256(message: string): Promise<string> {
   const encoder = new TextEncoder();
@@ -40,10 +41,10 @@ export async function POST(req: NextRequest) {
     mustChangePassword: admin.must_change_password || false,
   };
 
-  const encoded = Buffer.from(JSON.stringify(session)).toString("base64");
+  const signed = createSessionCookie(session);
 
   const res = NextResponse.json({ ok: true, companyName: admin.company_name });
-  res.cookies.set("admin_session", encoded, {
+  res.cookies.set("admin_session", signed, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",

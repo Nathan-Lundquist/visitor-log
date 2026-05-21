@@ -18,7 +18,7 @@ export default async function BadgePage({
     SELECT v.id, v.first_name, v.last_name, v.phone, v.reason, v.checked_in_at,
            w.name AS worker_name, c.name AS company_name, c.slug AS company_slug
     FROM visitors v
-    JOIN workers w ON w.id = v.worker_id
+    LEFT JOIN workers w ON w.id = v.worker_id
     JOIN companies c ON c.id = v.company_id
     WHERE v.id = ${Number(id)}
   `;

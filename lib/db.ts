@@ -117,4 +117,11 @@ export async function ensureTables() {
       signed_at TIMESTAMP DEFAULT NOW()
     )
   `;
+
+  // Performance indexes
+  await sql`CREATE INDEX IF NOT EXISTS idx_visitors_company_checkin ON visitors (company_id, checked_in_at DESC)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_visitors_worker ON visitors (worker_id)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_workers_company ON workers (company_id)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_admins_company ON admins (company_id)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_admins_email ON admins (email)`;
 }

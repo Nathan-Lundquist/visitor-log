@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Company, Worker } from "./types";
 
 interface CheckedInVisitor {
@@ -18,6 +18,7 @@ interface CheckedInVisitor {
 }
 
 const REASONS = ["Meeting", "Delivery", "Interview", "Contractor", "Other"];
+const IDLE_TIMEOUT_MS = 120_000; // 2 minutes
 
 export default function KioskWizard({
   company,
@@ -41,8 +42,14 @@ export default function KioskWizard({
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
 
+  // Checkout confirmation
+  const [confirmCheckout, setConfirmCheckout] = useState<number | null>(null);
+
   // Sign-out table state
   const [visitors, setVisitors] = useState<CheckedInVisitor[]>([]);
+
+  // Idle reset timer
+  const idleTimer = useRef<NodeJS.Timeout | null>(null);
 
   const loadVisitors = useCallback(async () => {
     try {
@@ -57,6 +64,28 @@ export default function KioskWizard({
     loadVisitors();
   }, [loadVisitors]);
 
+  // Idle reset: clear form after 2 min of no interaction
+  const formHasData = firstName || lastName || phone || workerId || reason || companyName || badgeNumber || usCitizen !== null;
+
+  useEffect(() => {
+    if (!formHasData || success) return;
+
+    function resetIdleTimer() {
+      if (idleTimer.current) clearTimeout(idleTimer.current);
+      idleTimer.current = setTimeout(() => resetForm(), IDLE_TIMEOUT_MS);
+    }
+
+    resetIdleTimer();
+    window.addEventListener("pointerdown", resetIdleTimer);
+    window.addEventListener("keydown", resetIdleTimer);
+
+    return () => {
+      if (idleTimer.current) clearTimeout(idleTimer.current);
+      window.removeEventListener("pointerdown", resetIdleTimer);
+      window.removeEventListener("keydown", resetIdleTimer);
+    };
+  }, [formHasData, success]);
+
   function resetForm() {
     setFirstName("");
     setLastName("");
@@ -69,6 +98,7 @@ export default function KioskWizard({
     setBadgeNumber("");
     setError("");
     setSuccess(false);
+    setConfirmCheckout(null);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -109,7 +139,7 @@ export default function KioskWizard({
       setSuccess(true);
       loadVisitors();
       new BroadcastChannel("visitor-updates").postMessage("refresh");
-      setTimeout(() => resetForm(), 8000);
+      setTimeout(() => resetForm(), 15000);
     } catch {
       setError("Check-in failed. Please try again.");
     } finally {
@@ -123,6 +153,7 @@ export default function KioskWizard({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ visitor_id: visitorId, company_id: company.id }),
     });
+    setConfirmCheckout(null);
     loadVisitors();
     new BroadcastChannel("visitor-updates").postMessage("refresh");
   }
@@ -183,9 +214,16 @@ export default function KioskWizard({
               <h2 className="text-3xl font-bold text-slate-800 mb-2">
                 You&apos;re Checked In!
               </h2>
-              <p className="text-lg text-slate-500">
+              <p className="text-lg text-slate-500 mb-6">
                 Welcome, {firstName} {lastName}
               </p>
+              <button
+                onClick={resetForm}
+                style={{ backgroundColor: company.primary_color }}
+                className="px-8 py-3 text-white text-base font-semibold rounded-xl hover:opacity-90 transition shadow-lg"
+              >
+                Next Visitor
+              </button>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-5">
@@ -426,17 +464,34 @@ export default function KioskWizard({
                       {v.badge_number ? ` · Badge #${v.badge_number}` : ""}
                     </p>
                   </div>
-                  <button
-                    onClick={() => checkOut(v.id)}
-                    className="px-5 py-2.5 text-sm font-semibold rounded-xl transition"
-                    style={{
-                      backgroundColor: `${company.primary_color}10`,
-                      color: company.primary_color,
-                      border: `1px solid ${company.primary_color}30`,
-                    }}
-                  >
-                    Sign Out
-                  </button>
+                  {confirmCheckout === v.id ? (
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => checkOut(v.id)}
+                        className="px-4 py-2 text-sm font-semibold rounded-xl bg-red-500 text-white hover:bg-red-600 transition"
+                      >
+                        Confirm
+                      </button>
+                      <button
+                        onClick={() => setConfirmCheckout(null)}
+                        className="px-4 py-2 text-sm font-medium rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 transition"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setConfirmCheckout(v.id)}
+                      className="px-5 py-2.5 text-sm font-semibold rounded-xl transition"
+                      style={{
+                        backgroundColor: `${company.primary_color}10`,
+                        color: company.primary_color,
+                        border: `1px solid ${company.primary_color}30`,
+                      }}
+                    >
+                      Sign Out
+                    </button>
+                  )}
                 </div>
               ))}
             </div>

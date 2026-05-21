@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
-import { notifyWorker, notifyAdmins, notifyOtherReason } from "@/lib/email";
+import { notifyWorker, notifyAdmins, notifyOtherReason, notifyNonCitizen } from "@/lib/email";
 
 export async function POST(req: NextRequest) {
   const { first_name, last_name, phone, worker_id, reason, company_id, us_citizen, company_name, badge_number } = await req.json();
@@ -62,6 +62,20 @@ export async function POST(req: NextRequest) {
       phone,
       reason,
       workerName: worker?.name || null,
+      time: timeStr,
+      companyName,
+    }).catch(() => {});
+  }
+
+  // ITAR: Urgent alert for non-US-citizen visitors
+  if (us_citizen === false && adminEmails.length > 0) {
+    notifyNonCitizen({
+      adminEmails,
+      visitorName: `${first_name} ${last_name}`,
+      phone,
+      reason,
+      workerName: worker?.name || null,
+      visitorCompany: company_name || null,
       time: timeStr,
       companyName,
     }).catch(() => {});
