@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { sql } from "@vercel/postgres";
+import { sql } from "@/lib/db";
 
 // GET: list today's checked-in visitors for a company
 export async function GET(req: NextRequest) {

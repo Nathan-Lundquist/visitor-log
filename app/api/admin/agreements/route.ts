@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { put, del } from "@vercel/blob";
-import { sql } from "@vercel/postgres";
+import { sql } from "@/lib/db";
 import { getAdminSession } from "@/auth";
 
 export async function GET(req: NextRequest) {
@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
   // Delete existing agreement for this company (one active agreement at a time)
   const existing = await sql`SELECT id, file_url FROM agreements WHERE company_id = ${session.companyId}`;
   for (const row of existing.rows) {
-    await del(row.file_url).catch(() => {});
+    await del(row.file_url as string).catch(() => {});
     await sql`DELETE FROM agreements WHERE id = ${row.id}`;
   }
 
@@ -86,7 +86,7 @@ export async function DELETE(req: NextRequest) {
 
   const existing = await sql`SELECT id, file_url FROM agreements WHERE company_id = ${session.companyId}`;
   for (const row of existing.rows) {
-    await del(row.file_url).catch(() => {});
+    await del(row.file_url as string).catch(() => {});
     await sql`DELETE FROM agreements WHERE id = ${row.id}`;
   }
 

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { sql } from "@vercel/postgres";
+import { sql } from "@/lib/db";
 
 export async function GET() {
   const result = await sql`SELECT id, name, slug, domain, logo_url, welcome_message, created_at FROM companies ORDER BY name`;

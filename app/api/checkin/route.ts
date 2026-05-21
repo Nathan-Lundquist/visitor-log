@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { sql } from "@vercel/postgres";
+import { sql } from "@/lib/db";
 import { notifyWorker, notifyAdmins, notifyOtherReason } from "@/lib/email";
 
 export async function POST(req: NextRequest) {

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { sql } from "@vercel/postgres";
+import { sql } from "@/lib/db";
 import { getAdminSession } from "@/auth";
 
 async function sha256(message: string): Promise<string> {

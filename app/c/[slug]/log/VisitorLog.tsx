@@ -38,8 +38,15 @@ export default function VisitorLog({ company }: { company: CompanyInfo }) {
 
   useEffect(() => {
     loadVisitors();
-    const interval = setInterval(loadVisitors, 10_000);
-    return () => clearInterval(interval);
+    // Listen for check-in/check-out events from the kiosk (same browser)
+    const channel = new BroadcastChannel("visitor-updates");
+    channel.onmessage = () => loadVisitors();
+    // Fallback poll every 5 min for when log display is on a separate device
+    const interval = setInterval(loadVisitors, 300_000);
+    return () => {
+      channel.close();
+      clearInterval(interval);
+    };
   }, [loadVisitors]);
 
   async function checkOut(visitorId: number) {
@@ -235,7 +242,7 @@ export default function VisitorLog({ company }: { company: CompanyInfo }) {
 
         {/* Auto-refresh indicator */}
         <p className="text-center text-xs text-slate-400">
-          Auto-refreshes every 10 seconds &middot; Last updated{" "}
+          Updates on check-in/out &middot; Last updated{" "}
           {now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
         </p>
       </div>

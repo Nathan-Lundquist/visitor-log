@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { put } from "@vercel/blob";
-import { sql } from "@vercel/postgres";
+import { sql } from "@/lib/db";
 
 export async function POST(req: NextRequest) {
   const formData = await req.formData();

@@ -1,4 +1,4 @@
-import { sql } from "@vercel/postgres";
+import { sql } from "@/lib/db";
 import { notFound } from "next/navigation";
 import KioskWizard from "./KioskWizard";
 import type { Agreement } from "./types";

@@ -55,8 +55,6 @@ export default function KioskWizard({
 
   useEffect(() => {
     loadVisitors();
-    const interval = setInterval(loadVisitors, 10_000);
-    return () => clearInterval(interval);
   }, [loadVisitors]);
 
   function resetForm() {
@@ -110,6 +108,7 @@ export default function KioskWizard({
       }
       setSuccess(true);
       loadVisitors();
+      new BroadcastChannel("visitor-updates").postMessage("refresh");
       setTimeout(() => resetForm(), 8000);
     } catch {
       setError("Check-in failed. Please try again.");
@@ -125,6 +124,7 @@ export default function KioskWizard({
       body: JSON.stringify({ visitor_id: visitorId, company_id: company.id }),
     });
     loadVisitors();
+    new BroadcastChannel("visitor-updates").postMessage("refresh");
   }
 
   const checkedIn = visitors.filter((v) => !v.checked_out_at);
@@ -443,7 +443,7 @@ export default function KioskWizard({
           )}
 
           <p className="text-center text-xs text-slate-300 mt-4">
-            Auto-refreshes every 10 seconds
+            Updates when visitors sign in or out
           </p>
         </div>
       </div>

@@ -1,4 +1,29 @@
-import { sql } from "@vercel/postgres";
+import postgres from "postgres";
+
+const connectionString =
+  process.env.POSTGRES_URL ||
+  process.env.vproj_POSTGRES_URL ||
+  process.env.DATABASE_URL ||
+  "";
+
+const pg = postgres(connectionString, {
+  ssl: { rejectUnauthorized: false },
+  max: 10,
+  idle_timeout: 20,
+  prepare: false, // Required for Supabase PgBouncer pooler
+});
+
+// Compatibility wrapper: @vercel/postgres returns { rows, rowCount }
+// postgres.js returns rows directly. Wrap to match the old API.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type QueryResult = { rows: any[]; rowCount: number };
+
+export function sql(strings: TemplateStringsArray, ...values: any[]): Promise<QueryResult> {
+  return (pg as any)(strings, ...values).then((rows: any[]) => ({
+    rows: [...rows],
+    rowCount: rows.length,
+  }));
+}
 
 export async function ensureTables() {
   await sql`
@@ -44,31 +69,24 @@ export async function ensureTables() {
     )
   `;
 
-  // Migration: add company_id to existing tables if missing
   await sql`ALTER TABLE workers ADD COLUMN IF NOT EXISTS company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE`;
   await sql`ALTER TABLE visitors ADD COLUMN IF NOT EXISTS company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE`;
   await sql`ALTER TABLE visitors ADD COLUMN IF NOT EXISTS checked_out_at TIMESTAMP`;
   await sql`ALTER TABLE visitors ADD COLUMN IF NOT EXISTS us_citizen BOOLEAN`;
 
-  // New columns on companies
   await sql`ALTER TABLE companies ADD COLUMN IF NOT EXISTS primary_color TEXT DEFAULT '#3b82f6'`;
   await sql`ALTER TABLE companies ADD COLUMN IF NOT EXISTS require_license BOOLEAN DEFAULT false`;
   await sql`ALTER TABLE companies ADD COLUMN IF NOT EXISTS require_agreement BOOLEAN DEFAULT false`;
 
-  // New column on workers
   await sql`ALTER TABLE workers ADD COLUMN IF NOT EXISTS title TEXT`;
 
-  // Visitor company name and badge number
   await sql`ALTER TABLE visitors ADD COLUMN IF NOT EXISTS company_name TEXT`;
   await sql`ALTER TABLE visitors ADD COLUMN IF NOT EXISTS badge_number TEXT`;
 
-  // "Other" reason notification email on companies
   await sql`ALTER TABLE companies ADD COLUMN IF NOT EXISTS other_notify_email TEXT`;
 
-  // Admin password change tracking
   await sql`ALTER TABLE admins ADD COLUMN IF NOT EXISTS must_change_password BOOLEAN DEFAULT false`;
 
-  // Agreements table
   await sql`
     CREATE TABLE IF NOT EXISTS agreements (
       id SERIAL PRIMARY KEY,
@@ -81,7 +99,6 @@ export async function ensureTables() {
     )
   `;
 
-  // Visitor licenses table
   await sql`
     CREATE TABLE IF NOT EXISTS visitor_licenses (
       id SERIAL PRIMARY KEY,
@@ -91,7 +108,6 @@ export async function ensureTables() {
     )
   `;
 
-  // Visitor signatures table
   await sql`
     CREATE TABLE IF NOT EXISTS visitor_signatures (
       id SERIAL PRIMARY KEY,
@@ -102,5 +118,3 @@ export async function ensureTables() {
     )
   `;
 }
-
-export { sql };
