@@ -20,7 +20,7 @@ interface Visitor {
 export default function VisitorsTab({ companyId }: { companyId: number }) {
   const [visitors, setVisitors] = useState<Visitor[]>([]);
   const [dateFilter, setDateFilter] = useState(() => new Date().toISOString().split("T")[0]);
-  const [rangeFilter, setRangeFilter] = useState<"date" | "week" | "month" | "range">("date");
+  const [rangeFilter, setRangeFilter] = useState<"all" | "date" | "week" | "month" | "range">("all");
   const [startDate, setStartDate] = useState(() => new Date().toISOString().split("T")[0]);
   const [endDate, setEndDate] = useState(() => new Date().toISOString().split("T")[0]);
   const [search, setSearch] = useState("");
@@ -36,7 +36,7 @@ export default function VisitorsTab({ companyId }: { companyId: number }) {
       url += `&date=${dateFilter}`;
     } else if (rangeFilter === "range") {
       url += `&startDate=${startDate}&endDate=${endDate}`;
-    } else {
+    } else if (rangeFilter !== "all") {
       url += `&range=${rangeFilter}`;
     }
     const res = await fetch(url);
@@ -74,7 +74,7 @@ export default function VisitorsTab({ companyId }: { companyId: number }) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `visitors-${rangeFilter === "range" ? `${startDate}_${endDate}` : dateFilter}.csv`;
+    a.download = `visitors-${rangeFilter === "all" ? "all" : rangeFilter === "range" ? `${startDate}_${endDate}` : dateFilter}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -103,9 +103,10 @@ export default function VisitorsTab({ companyId }: { companyId: number }) {
           />
           <select
             value={rangeFilter}
-            onChange={(e) => setRangeFilter(e.target.value as "date" | "week" | "month" | "range")}
+            onChange={(e) => setRangeFilter(e.target.value as "all" | "date" | "week" | "month" | "range")}
             className="px-3 py-2 border border-slate-300 rounded-lg text-sm"
           >
+            <option value="all">All Time</option>
             <option value="date">Specific Date</option>
             <option value="week">This Week</option>
             <option value="month">This Month</option>
@@ -168,7 +169,7 @@ export default function VisitorsTab({ companyId }: { companyId: number }) {
             </thead>
             <tbody>
               {filtered.map((v) => (
-                <tr key={v.id} className="border-b border-slate-50 hover:bg-slate-50">
+                <tr key={v.id} className={`border-b border-slate-50 ${!v.checked_out_at ? "bg-green-50 hover:bg-green-100" : "hover:bg-slate-50"}`}>
                   <td className="px-4 py-3">
                     <div className="font-medium">{v.first_name} {v.last_name}</div>
                     <div className="text-xs text-slate-400">{v.phone}</div>
